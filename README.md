@@ -140,3 +140,83 @@ stripe trigger invoice.paid
 - `gen_count` (INTEGER, default 0)
 - `navi_count` (INTEGER, default 0)
 - UNIQUE constraint on (user_id, date)
+
+## Day3 Features (BullMQ + Google Calendar + Enhanced Upsell)
+
+### BullMQ Setup
+1. Install and start Redis server:
+   ```bash
+   # Ubuntu/Debian
+   sudo apt install redis-server
+   sudo systemctl start redis-server
+   
+   # macOS
+   brew install redis
+   brew services start redis
+   ```
+
+2. Set REDIS_URL in .env.local:
+   ```
+   REDIS_URL=redis://localhost:6379
+   ```
+
+### Google Calendar Integration
+1. Create a Google Cloud Project and enable Calendar API
+2. Create a service account and download the JSON key
+3. Set environment variables:
+   ```
+   GOOGLE_PROJECT_ID=your-project-id
+   GOOGLE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+   GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+   GOOGLE_CALENDAR_ID=primary
+   ```
+4. Share your calendar with the service account email (Editor permissions)
+
+### New API Endpoints
+- `POST /api/generate/start` - Start BullMQ generation job
+- `GET /api/generate/status?jobId=` - Check job status and progress
+- `POST /api/classroom/book` - Create Google Calendar event with Meet link
+- `GET /api/calendar/feed` - Fetch upcoming calendar events
+
+### Enhanced UI Features
+- Usage limit modals with direct Stripe checkout
+- Plan comparison table in settings
+- Real-time job progress tracking
+- Google Meet URL copying
+- Calendar event display
+
+### Testing Procedures
+1. **BullMQ Queue System:**
+   ```bash
+   # Start multiple generation jobs
+   curl -X POST http://localhost:3000/api/generate/start \
+     -H "Content-Type: application/json" \
+     -d '{"content":"数学","difficulty":"基礎"}'
+   
+   # Check job status
+   curl http://localhost:3000/api/generate/status?jobId=YOUR_JOB_ID
+   ```
+
+2. **Google Calendar Integration:**
+   ```bash
+   # Book classroom session
+   curl -X POST http://localhost:3000/api/classroom/book \
+     -H "Content-Type: application/json" \
+     -d '{
+       "start":"2024-01-15T10:00:00",
+       "end":"2024-01-15T11:00:00",
+       "topic":"数学授業",
+       "attendeeEmail":"student@example.com"
+     }'
+   ```
+
+3. **Upsell Flow:**
+   - Use FREE account
+   - Generate 10+ materials to hit limit
+   - Verify modal appears with Stripe checkout
+
+### Troubleshooting
+- **Redis Connection:** Ensure Redis server is running on port 6379
+- **Google Calendar:** Verify service account has calendar sharing permissions
+- **BullMQ Jobs:** Check Redis for job data: `redis-cli KEYS "*"`
+- **Timezone Issues:** All dates use Asia/Tokyo timezone

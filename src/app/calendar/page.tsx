@@ -6,6 +6,15 @@ import Layout from '@/components/Layout';
 export default function CalendarPage() {
   const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState<Array<{
+    id: string;
+    title: string;
+    start: string;
+    end: string;
+    description?: string;
+    htmlLink?: string;
+    meetUrl?: string;
+  }>>([]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -22,7 +31,20 @@ export default function CalendarPage() {
       }
     };
 
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('/api/calendar/feed');
+        if (response.ok) {
+          const data = await response.json();
+          setEvents(data.events || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+      }
+    };
+
     fetchUser();
+    fetchEvents();
   }, []);
 
   if (loading) {
@@ -94,17 +116,23 @@ export default function CalendarPage() {
                     }`}>
                       {day}
                     </div>
-                    {/* Sample events */}
-                    {day === 15 && (
-                      <div className="mt-1 text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">
-                        数学授業
-                      </div>
-                    )}
-                    {day === 22 && (
-                      <div className="mt-1 text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded">
-                        個別指導
-                      </div>
-                    )}
+                    {/* Real events */}
+                    {events
+                      .filter(event => {
+                        const eventDate = new Date(event.start);
+                        return eventDate.getDate() === day && 
+                               eventDate.getMonth() === currentMonth &&
+                               eventDate.getFullYear() === currentYear;
+                      })
+                      .map((event, eventIndex) => (
+                        <div 
+                          key={eventIndex}
+                          className="mt-1 text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded cursor-pointer hover:bg-blue-200"
+                          title={event.title}
+                        >
+                          {event.title.length > 10 ? `${event.title.substring(0, 10)}...` : event.title}
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>

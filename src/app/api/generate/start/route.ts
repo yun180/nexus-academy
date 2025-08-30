@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
+import { addGenerateJob } from '@/lib/queue';
+import { initializeWorker } from '@/lib/worker';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,13 +10,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    await request.json(); // content and difficulty for future use
+    initializeWorker();
+
+    const { content, difficulty } = await request.json();
     
-    const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    setTimeout(() => {
-      console.log(`Generation job ${jobId} completed (dummy)`);
-    }, 2000);
+    const jobId = await addGenerateJob(session.userId, { content, difficulty });
 
     return NextResponse.json({ 
       jobId,

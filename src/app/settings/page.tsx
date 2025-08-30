@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
+import PlanComparison from '@/components/PlanComparison';
 
 export default function SettingsPage() {
   const [user, setUser] = useState<{ plan: 'free' | 'plus'; displayName: string; paidUntil?: string } | null>(null);
@@ -102,21 +103,12 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {user?.plan === 'free' && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">NEXUS ACADEMY PLUSの特典</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• 広告なしで教材生成</li>
-                <li>• 生成回数無制限</li>
-                <li>• AIサポート5本柱フル解放</li>
-                <li>• 応用レベルの小テスト</li>
-                <li>• 弱点分析レポート</li>
-                <li>• 月次学習PDFレポート</li>
-                <li>• カレンダー編集機能</li>
-              </ul>
-            </div>
-          )}
         </div>
+
+        {/* プラン比較 */}
+        {user?.plan === 'free' && (
+          <PlanComparison />
+        )}
 
         {/* アカウント情報 */}
         <div className="bg-white rounded-lg shadow-sm p-6">

@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
+import UpgradeModal from '@/components/UpgradeModal';
 
 export default function AIPage() {
   const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -41,8 +43,7 @@ export default function AIPage() {
           alert(`${featureId}を開始します（実装予定）`);
         }
       } else {
-        const error = await response.json();
-        alert(error.error || 'アクセスが拒否されました');
+        setShowUpgradeModal(true);
       }
     } catch (error) {
       console.error('Feature access error:', error);
@@ -167,6 +168,11 @@ export default function AIPage() {
           </div>
         </div>
       </div>
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)}
+        reason="feature_locked"
+      />
     </Layout>
   );
 }

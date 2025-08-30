@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import AdModal from '@/components/AdModal';
+import UpgradeModal from '@/components/UpgradeModal';
 
 export default function GeneratorPage() {
   const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAd, setShowAd] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<{
     title: string;
@@ -67,7 +69,7 @@ export default function GeneratorPage() {
 
     if (user?.plan === 'free') {
       if (limits && limits.gen_left <= 0) {
-        alert('本日の生成回数上限に達しました。明日再度お試しください。');
+        setShowUpgradeModal(true);
         return;
       }
       setShowAd(true);
@@ -261,6 +263,11 @@ export default function GeneratorPage() {
       </div>
 
       <AdModal isOpen={showAd} onComplete={handleAdComplete} />
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)}
+        reason="generation_limit"
+      />
     </Layout>
   );
 }

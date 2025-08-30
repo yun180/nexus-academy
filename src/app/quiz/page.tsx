@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
+import UpgradeModal from '@/components/UpgradeModal';
 
 export default function QuizPage() {
   const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,8 +39,7 @@ export default function QuizPage() {
         await response.json();
         alert(`${level}レベルのテストを開始します（実装予定）`);
       } else {
-        const error = await response.json();
-        alert(error.error || 'アクセスが拒否されました');
+        setShowUpgradeModal(true);
       }
     } catch (error) {
       console.error('Level access error:', error);
@@ -103,13 +104,18 @@ export default function QuizPage() {
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {level.available ? 'テスト開始' : 'PLUSにアップグレード'}
+                  {level.available ? 'テスト開始' : 'PLUS限定'}
                 </button>
               </div>
             ))}
           </div>
         </div>
       </div>
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)}
+        reason="feature_locked"
+      />
     </Layout>
   );
 }

@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "@line/liff": "^2.27.1",
+    "@types/uuid": "^10.0.0",
+    "bullmq": "^5.58.4",
     "cookie": "^1.0.2",
+    "googleapis": "^159.0.0",
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
     "next": "15.5.2",
@@ -19,7 +22,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "redis": "^5.8.2",
-    "stripe": "^18.5.0"
+    "stripe": "^18.5.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

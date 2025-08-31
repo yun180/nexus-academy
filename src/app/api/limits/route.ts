@@ -1,12 +1,45 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
 
 const GEN_MAX_PER_DAY = parseInt(process.env.GEN_MAX_PER_DAY || '10');
 const NAVI_MAX_PER_DAY = parseInt(process.env.NAVI_MAX_PER_DAY || '3');
 
 export async function GET() {
   try {
+    if (process.env.AUTH_DEV_BYPASS === '1') {
+      const cookieStore = await cookies();
+      const sessionToken = cookieStore.get('session')?.value;
+      
+      if (sessionToken) {
+        try {
+          const decoded = verify(sessionToken, process.env.LINE_CHANNEL_SECRET || 'dev-secret') as any;
+          if (decoded.userId === 'dev-user-id') {
+            const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+            
+            if (decoded.plan === 'plus') {
+              return NextResponse.json({
+                gen_left: -1,
+                navi_left: -1,
+                today,
+                unlimited: true
+              });
+            } else {
+              return NextResponse.json({
+                gen_left: GEN_MAX_PER_DAY,
+                navi_left: NAVI_MAX_PER_DAY,
+                today,
+                unlimited: false
+              });
+            }
+          }
+        } catch (error) {
+        }
+      }
+    }
+
     const session = await getCurrentUser();
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });

@@ -1,9 +1,31 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
 
 export async function GET() {
   try {
+    if (process.env.AUTH_DEV_BYPASS === '1') {
+      const cookieStore = await cookies();
+      const sessionToken = cookieStore.get('session')?.value;
+      
+      if (sessionToken) {
+        try {
+          const decoded = verify(sessionToken, process.env.LINE_CHANNEL_SECRET || 'dev-secret') as any;
+          if (decoded.userId === 'dev-user-id') {
+            return NextResponse.json({
+              id: 'dev-user-id',
+              displayName: `Dev User (${(decoded.plan || 'free').toUpperCase()})`,
+              plan: decoded.plan || 'free',
+              paidUntil: null
+            });
+          }
+        } catch (error) {
+        }
+      }
+    }
+
     const session = await getCurrentUser();
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });

@@ -1,21 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
 
 const GEN_MAX_PER_DAY = parseInt(process.env.GEN_MAX_PER_DAY || '10');
 const NAVI_MAX_PER_DAY = parseInt(process.env.NAVI_MAX_PER_DAY || '3');
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getCurrentUser();
-    if (!session) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
     const { type } = await request.json();
     
     if (!type || !['gen', 'navi'].includes(type)) {
       return NextResponse.json({ error: 'Invalid type. Must be "gen" or "navi"' }, { status: 400 });
+    }
+
+    if (process.env.AUTH_DEV_BYPASS === '1') {
+      const cookieStore = await cookies();
+      const sessionToken = cookieStore.get('session')?.value;
+      
+      if (sessionToken) {
+        try {
+          const decoded = verify(sessionToken, process.env.LINE_CHANNEL_SECRET || 'dev-secret') as any;
+          if (decoded.userId === 'dev-user-id') {
+            if (decoded.plan === 'plus') {
+              return NextResponse.json({ success: true, unlimited: true });
+            } else {
+              return NextResponse.json({ 
+                success: true, 
+                new_count: 1,
+                remaining: (type === 'gen' ? GEN_MAX_PER_DAY : NAVI_MAX_PER_DAY) - 1
+              });
+            }
+          }
+        } catch (error) {
+        }
+      }
+    }
+
+    const session = await getCurrentUser();
+    if (!session) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     const userResult = await query(

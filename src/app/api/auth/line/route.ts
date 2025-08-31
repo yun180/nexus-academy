@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const { idToken, redirectTo } = await request.json();
+    const { idToken, redirectTo, displayName, pictureUrl } = await request.json();
 
     if (!idToken) {
       return NextResponse.json({ error: 'ID token is required' }, { status: 400 });
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid ID token' }, { status: 401 });
     }
 
-    const user = await createOrUpdateUser(lineUser.sub, lineUser.name || '');
+    const user = await createOrUpdateUser(lineUser.sub, displayName || lineUser.name || '');
     const sessionToken = createSessionToken(user.id);
 
     const cookieStore = await cookies();
@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         displayName: user.display_name,
-        plan: user.plan
+        plan: user.plan,
+        pictureUrl: pictureUrl || null
       }
     });
   } catch (error) {

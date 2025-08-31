@@ -10,6 +10,13 @@ declare global {
       isLoggedIn: () => boolean;
       getIDToken: () => string;
       login: () => void;
+      logout: () => void;
+      getProfile: () => Promise<{
+        userId: string;
+        displayName: string;
+        pictureUrl?: string;
+        statusMessage?: string;
+      }>;
     };
   }
 }

@@ -15,7 +15,7 @@ export async function GET() {
       
       if (sessionToken) {
         try {
-          const decoded = verify(sessionToken, process.env.LINE_CHANNEL_SECRET || 'dev-secret') as any;
+          const decoded = verify(sessionToken, process.env.LINE_CHANNEL_SECRET || 'dev-secret') as { userId: string; plan: string };
           if (decoded.userId === 'dev-user-id') {
             const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
             
@@ -35,7 +35,7 @@ export async function GET() {
               });
             }
           }
-        } catch (error) {
+        } catch (_error) {
         }
       }
     }

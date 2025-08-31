@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       
       if (sessionToken) {
         try {
-          const decoded = verify(sessionToken, process.env.LINE_CHANNEL_SECRET || 'dev-secret') as any;
+          const decoded = verify(sessionToken, process.env.LINE_CHANNEL_SECRET || 'dev-secret') as { userId: string; plan: string };
           if (decoded.userId === 'dev-user-id') {
             if (decoded.plan === 'plus') {
               return NextResponse.json({ success: true, unlimited: true });
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
               });
             }
           }
-        } catch (error) {
+        } catch (_error) {
         }
       }
     }

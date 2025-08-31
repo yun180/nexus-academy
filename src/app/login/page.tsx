@@ -24,7 +24,12 @@ declare global {
 export default function LoginPage() {
   const [isLiffReady, setIsLiffReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<{
+    userId: string;
+    displayName: string;
+    pictureUrl?: string;
+    statusMessage?: string;
+  } | null>(null);
   const [error, setError] = useState<string>('');
   const router = useRouter();
 
@@ -70,7 +75,12 @@ export default function LoginPage() {
     initializeLiff();
   }, []);
 
-  const authenticateWithServer = async (idToken: string, profile: any) => {
+  const authenticateWithServer = async (idToken: string, profile: {
+    userId: string;
+    displayName: string;
+    pictureUrl?: string;
+    statusMessage?: string;
+  }) => {
     try {
       const response = await fetch('/api/auth/line', {
         method: 'POST',

@@ -9,7 +9,7 @@ declare global {
       init: (config: { liffId: string }) => Promise<void>;
       isLoggedIn: () => boolean;
       getIDToken: () => string;
-      login: () => void;
+      login: (options?: { redirectUri?: string }) => void;
       logout: () => void;
       getProfile: () => Promise<{
         userId: string;

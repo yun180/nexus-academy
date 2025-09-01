@@ -33,7 +33,14 @@ export default function GeneratorPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/me');
+        let response = await fetch('/api/me');
+        
+        if (!response.ok && response.status === 401) {
+          console.log('Initial auth check failed, retrying after 500ms...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          response = await fetch('/api/me');
+        }
+        
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);

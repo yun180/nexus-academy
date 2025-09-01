@@ -64,7 +64,7 @@ export function verifySessionToken(token: string): { userId: string } | null {
 
 export async function getCurrentUser() {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('session')?.value;
+  const sessionToken = cookieStore.get('auth_session')?.value;
   
   if (!sessionToken) {
     return null;

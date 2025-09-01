@@ -89,6 +89,7 @@ function LiffPageContent() {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ idToken }),
+              cache: 'no-store'
             });
 
             if (!response.ok) {
@@ -98,8 +99,25 @@ function LiffPageContent() {
 
             const data = await response.json();
             addDebugInfo('Server authentication successful');
-            setStage('ok');
 
+            addDebugInfo('Verifying session establishment...');
+            let sessionEstablished = false;
+            for (let i = 0; i < 3; i++) {
+              const meResponse = await fetch('/api/me', { cache: 'no-store' });
+              if (meResponse.ok) {
+                sessionEstablished = true;
+                addDebugInfo(`Session verified on attempt ${i + 1}`);
+                break;
+              }
+              addDebugInfo(`Session check ${i + 1}/3 failed, retrying...`);
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            if (!sessionEstablished) {
+              throw new Error('Session not established after authentication');
+            }
+
+            setStage('ok');
             addDebugInfo(`Redirecting to: ${redirectTo}`);
             router.replace(redirectTo);
           } catch (err) {

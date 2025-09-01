@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken } from '@/lib/auth';
 import { createOrUpdateUser } from '@/lib/db';
-import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,16 +40,7 @@ export async function POST(request: NextRequest) {
     const user = await createOrUpdateUser(profile.sub, profile.name || '');
     const sessionToken = createSessionToken(user.id);
 
-    const cookieStore = await cookies();
-    cookieStore.set('session', sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/',
-    });
-
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       ok: true,
       user: {
         id: user.id,
@@ -58,6 +48,16 @@ export async function POST(request: NextRequest) {
         picture: profile.picture || null
       }
     });
+
+    response.cookies.set('auth_session', sessionToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
+
+    return response;
   } catch (error) {
     console.error('Authentication error:', error);
     return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });

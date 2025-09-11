@@ -35,7 +35,59 @@ export async function initDatabase() {
         date DATE NOT NULL,
         gen_count INTEGER DEFAULT 0,
         navi_count INTEGER DEFAULT 0,
+        quiz_count INTEGER DEFAULT 0,
+        learning_pick_count INTEGER DEFAULT 0,
         UNIQUE(user_id, date)
+      );
+      
+      CREATE TABLE IF NOT EXISTS passkeys (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        code TEXT UNIQUE NOT NULL,
+        plan_type TEXT NOT NULL CHECK (plan_type IN ('basic', 'premium')),
+        max_uses INTEGER NOT NULL,
+        current_uses INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        expires_at TIMESTAMPTZ,
+        created_by UUID REFERENCES users(id)
+      );
+      
+      CREATE TABLE IF NOT EXISTS learning_history (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES users(id),
+        subject TEXT NOT NULL,
+        topic TEXT,
+        score INTEGER,
+        max_score INTEGER,
+        weak_areas JSONB,
+        completed_at TIMESTAMPTZ DEFAULT NOW(),
+        quiz_type TEXT,
+        difficulty TEXT
+      );
+      
+      CREATE TABLE IF NOT EXISTS goals (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES users(id),
+        target_school TEXT,
+        exam_date DATE,
+        current_level TEXT,
+        target_subjects TEXT[],
+        study_plan JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      
+      CREATE TABLE IF NOT EXISTS class_sessions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES users(id),
+        title TEXT NOT NULL,
+        session_type TEXT NOT NULL CHECK (session_type IN ('group', 'individual')),
+        start_time TIMESTAMPTZ NOT NULL,
+        end_time TIMESTAMPTZ NOT NULL,
+        google_event_id TEXT,
+        meet_url TEXT,
+        status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled')),
+        notes TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
     

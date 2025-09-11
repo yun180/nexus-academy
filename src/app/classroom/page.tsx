@@ -76,7 +76,7 @@ export default function ClassroomPage() {
 
   if (loading) {
     return (
-      <Layout title="オンライン教室">
+      <Layout>
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -85,7 +85,7 @@ export default function ClassroomPage() {
   }
 
   return (
-    <Layout title="オンライン教室">
+    <Layout>
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">オンライン教室</h2>

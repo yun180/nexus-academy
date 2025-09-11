@@ -53,7 +53,7 @@ export default function AIPage() {
 
   if (loading) {
     return (
-      <Layout title="AIサポート5本柱">
+      <Layout>
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -100,71 +100,84 @@ export default function AIPage() {
   ];
 
   return (
-    <Layout title="AIサポート5本柱">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">AIサポート5本柱</h2>
-          
-          {user?.plan === 'free' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">FREE版では制限があります</h3>
-                  <div className="mt-2 text-sm text-blue-700">
-                    <p>ソリューションナビのみご利用いただけます。全機能をご利用いただくにはPLUSにアップグレードしてください。</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+    <Layout>
+      <div className="space-y-8">
+        <h1 className="text-2xl font-bold text-gray-900">学習サポート</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">ソリューションナビ</h3>
+            <p className="text-gray-600 mb-6">AIチャットで疑問解決</p>
+            <button
+              onClick={() => handleFeatureClick('solution-navi')}
+              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600"
+            >
+              開始する
+            </button>
+          </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {aiFeatures.map((feature) => (
-              <div
-                key={feature.id}
-                className={`p-6 rounded-lg border-2 ${
-                  feature.available
-                    ? 'border-blue-200 bg-blue-50'
-                    : 'border-gray-200 bg-gray-50 opacity-60'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {feature.name}
-                  </h3>
-                  {!feature.available && (
-                    <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </div>
-                
-                <p className="text-sm text-gray-600 mb-4">
-                  {feature.description}
-                </p>
-                
-                <div className="text-xs text-gray-500 mb-4">
-                  {feature.dailyLimit}
-                </div>
-                
-                <button
-                  disabled={!feature.available}
-                  onClick={() => handleFeatureClick(feature.id)}
-                  className={`w-full py-2 px-4 rounded-md font-medium ${
-                    feature.available
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {feature.available ? '利用開始' : 'PLUSにアップグレード'}
-                </button>
-              </div>
-            ))}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">ゴールプランナー</h3>
+            <p className="text-gray-600 mb-6">学習カレンダーを自動生成</p>
+            <button
+              onClick={() => handleFeatureClick('goal-planner')}
+              disabled={user?.plan !== 'plus'}
+              className={`w-full py-3 px-4 rounded-lg font-medium ${
+                user?.plan === 'plus'
+                  ? 'bg-green-500 text-white hover:bg-green-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              開始する
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">チャレンジマッチ</h3>
+            <p className="text-gray-600 mb-6">AI小テスト機能</p>
+            <button
+              onClick={() => handleFeatureClick('challenge-match')}
+              disabled={user?.plan !== 'plus'}
+              className={`w-full py-3 px-4 rounded-lg font-medium ${
+                user?.plan === 'plus'
+                  ? 'bg-purple-500 text-white hover:bg-purple-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              開始する
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">アンサーチェッカー</h3>
+            <p className="text-gray-600 mb-6">手書き答案の自動採点</p>
+            <button
+              onClick={() => handleFeatureClick('answer-checker')}
+              disabled={user?.plan !== 'plus'}
+              className={`w-full py-3 px-4 rounded-lg font-medium ${
+                user?.plan === 'plus'
+                  ? 'bg-orange-500 text-white hover:bg-orange-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              開始する
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">ラーニングピック</h3>
+            <p className="text-gray-600 mb-6">苦手単元を分析し教材レコメンド</p>
+            <button
+              onClick={() => handleFeatureClick('learning-pick')}
+              disabled={user?.plan !== 'plus'}
+              className={`w-full py-3 px-4 rounded-lg font-medium ${
+                user?.plan === 'plus'
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              開始する
+            </button>
           </div>
         </div>
       </div>

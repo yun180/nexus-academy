@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <Layout title="設定">
+      <Layout>
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -65,7 +65,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <Layout title="設定">
+    <Layout>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* プラン情報 */}
         <div className="bg-white rounded-lg shadow-sm p-6">

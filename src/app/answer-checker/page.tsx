@@ -24,7 +24,7 @@ interface HistoryItem {
   topic: string;
   score: number;
   completedAt: string;
-  weakAreas: any;
+  weakAreas: string[] | { incorrectParts: string[] } | null;
 }
 
 export default function AnswerCheckerPage() {

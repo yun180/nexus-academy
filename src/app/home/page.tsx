@@ -93,7 +93,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">AIチャット</h3>
             <p className="text-gray-600 mb-4">数学・英語の質問にAIが答えます</p>
@@ -101,6 +101,12 @@ export default function HomePage() {
             <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
               <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${limits?.unlimited ? 100 : ((3 - (limits?.navi_left || 0)) / 3) * 100}%` }} />
             </div>
+            <button 
+              onClick={() => window.location.href = '/ai'}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600"
+            >
+              開始する
+            </button>
           </div>
 
           <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -110,6 +116,42 @@ export default function HomePage() {
             <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
               <div className="bg-green-500 h-2 rounded-full" style={{ width: `${limits?.unlimited ? 100 : ((10 - (limits?.gen_left || 0)) / 10) * 100}%` }} />
             </div>
+            <button 
+              onClick={() => window.location.href = '/generator'}
+              className="w-full bg-green-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-600"
+            >
+              開始する
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">小テスト</h3>
+            <p className="text-gray-600 mb-4">基礎から応用まで段階的にテスト</p>
+            <p className="text-sm text-gray-500 mb-4">残り利用回数: {user?.plan === 'plus' ? '無制限' : '2回'}</p>
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+              <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${user?.plan === 'plus' ? 100 : 40}%` }} />
+            </div>
+            <button 
+              onClick={() => window.location.href = '/quiz'}
+              className="w-full bg-purple-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-600"
+            >
+              開始する
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">教材レコメンド</h3>
+            <p className="text-gray-600 mb-4">苦手分野に合わせた教材を推薦</p>
+            <p className="text-sm text-gray-500 mb-4">残り利用回数: {user?.plan === 'plus' ? '無制限' : '1回'}</p>
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+              <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${user?.plan === 'plus' ? 100 : 33}%` }} />
+            </div>
+            <button 
+              onClick={() => window.location.href = '/material-recommend'}
+              className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-600"
+            >
+              開始する
+            </button>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await getCurrentUser();
     if (!session) {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getCurrentUser();
     if (!session) {
@@ -91,8 +91,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function analyzeLearningHistory(history: any[]) {
-  const subjectAnalysis: { [key: string]: any } = {};
+function analyzeLearningHistory(history: Array<{ subject: string; score: number; weak_areas: string | null }>) {
+  const subjectAnalysis: { [key: string]: { totalAttempts: number; totalScore: number; weakAreas: Set<string>; recentScores: number[] } } = {};
   
   history.forEach(record => {
     const subject = record.subject;
@@ -122,12 +122,12 @@ function analyzeLearningHistory(history: any[]) {
             subjectAnalysis[subject].weakAreas.add(part)
           );
         }
-      } catch (e) {
+      } catch (_e) {
       }
     }
   });
   
-  const analysis = Object.entries(subjectAnalysis).map(([subject, data]: [string, any]) => {
+  const analysis = Object.entries(subjectAnalysis).map(([subject, data]) => {
     const avgScore = data.totalScore / data.totalAttempts;
     const recentAvg = data.recentScores.slice(-5).reduce((a: number, b: number) => a + b, 0) / Math.min(5, data.recentScores.length);
     
@@ -149,7 +149,7 @@ function analyzeLearningHistory(history: any[]) {
   });
 }
 
-function generateRecommendations(analysis: any[]) {
+function generateRecommendations(analysis: Array<{ subject: string; averageScore: number; needsAttention: boolean; trend: string; weakAreas: string[] }>) {
   const recommendations = [];
   
   analysis.forEach(subject => {

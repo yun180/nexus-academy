@@ -150,7 +150,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateFields: string[] = [];
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     let paramIndex = 1;
 
     if (status) {

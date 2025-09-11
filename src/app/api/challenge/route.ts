@@ -76,13 +76,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const correctAnswers = answers.filter((answer: any) => answer.isCorrect).length;
+    const correctAnswers = answers.filter((answer: { isCorrect: boolean }) => answer.isCorrect).length;
     const totalQuestions = answers.length;
     const score = Math.round((correctAnswers / totalQuestions) * 100);
 
     const weakAreas = answers
-      .filter((answer: any) => !answer.isCorrect)
-      .map((answer: any) => answer.topic)
+      .filter((answer: { isCorrect: boolean }) => !answer.isCorrect)
+      .map((answer: { topic: string }) => answer.topic)
       .filter((topic: string, index: number, arr: string[]) => arr.indexOf(topic) === index);
 
     await query(`

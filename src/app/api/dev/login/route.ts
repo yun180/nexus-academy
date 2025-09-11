@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       message: `Development login successful as ${plan.toUpperCase()} user`
     });
 
-    response.cookies.set('session', token, {
+    response.cookies.set('auth_session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

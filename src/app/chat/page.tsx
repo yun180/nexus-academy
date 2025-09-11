@@ -9,12 +9,13 @@ interface Message {
   type: 'user' | 'assistant';
   content: string;
   image?: string;
+  videoUrl?: string;
   timestamp: Date;
 }
 
 interface ChatSettings {
   subject: '数学' | '英語';
-  responseType: '解答解説' | '解法' | 'ヒント';
+  responseType: '解答解説' | '解法' | 'ヒント' | '動画解説';
 }
 
 export default function ChatPage() {
@@ -121,6 +122,7 @@ export default function ChatPage() {
           id: (Date.now() + 1).toString(),
           type: 'assistant',
           content: data.response,
+          videoUrl: data.videoUrl,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, assistantMessage]);
@@ -189,12 +191,13 @@ export default function ChatPage() {
               <label className="text-sm font-medium text-gray-700">回答タイプ:</label>
               <select
                 value={settings.responseType}
-                onChange={(e) => setSettings(prev => ({ ...prev, responseType: e.target.value as '解答解説' | '解法' | 'ヒント' }))}
+                onChange={(e) => setSettings(prev => ({ ...prev, responseType: e.target.value as '解答解説' | '解法' | 'ヒント' | '動画解説' }))}
                 className="border border-gray-300 rounded px-2 py-1 text-sm"
               >
                 <option value="解答解説">解答解説</option>
                 <option value="解法">解法</option>
                 <option value="ヒント">ヒント</option>
+                <option value="動画解説">動画解説</option>
               </select>
             </div>
           </div>
@@ -234,6 +237,18 @@ export default function ChatPage() {
                     />
                   )}
                   <div className="whitespace-pre-wrap">{message.content}</div>
+                  {message.videoUrl && (
+                    <div className="mt-3">
+                      <video 
+                        controls 
+                        className="w-full rounded-lg"
+                        style={{ maxWidth: '400px' }}
+                      >
+                        <source src={message.videoUrl} type="video/mp4" />
+                        お使いのブラウザは動画再生に対応していません。
+                      </video>
+                    </div>
+                  )}
                   <div
                     className={`text-xs mt-1 ${
                       message.type === 'user' ? 'text-blue-100' : 'text-gray-500'

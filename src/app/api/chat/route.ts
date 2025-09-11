@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { generateMathVideo } from '@/lib/video-generator';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (user.plan === 'free') {
+    if (user.plan === 'free' && process.env.AUTH_DEV_BYPASS !== '1') {
       try {
         const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
         const usageResult = await query(
@@ -109,6 +110,21 @@ export async function POST(request: NextRequest) {
     });
 
     const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
+    
+    let videoUrl = null;
+    if (responseType === '動画解説' && subject === '数学') {
+      try {
+        const problemText = message || '数学の問題';
+        videoUrl = await generateMathVideo({
+          problem: problemText,
+          solution: response,
+          subject,
+          responseType
+        });
+      } catch (error) {
+        console.error('Video generation failed:', error);
+      }
+    }
 
     if (user.plan === 'free' && process.env.AUTH_DEV_BYPASS !== '1') {
       try {
@@ -126,7 +142,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      response: formatMathResponse(response)
+      response: formatMathResponse(response),
+      videoUrl
     });
   } catch (error) {
     console.error('Chat error:', error);

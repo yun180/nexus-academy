@@ -77,7 +77,7 @@ export default function AIPage() {
             <h3 className="text-lg font-semibold text-blue-900 mb-2">ソリューションナビ</h3>
             <p className="text-blue-700 mb-6">AIチャットで疑問解決</p>
             <button
-              onClick={() => handleFeatureClick('solution-navi')}
+              onClick={() => window.location.href = '/chat'}
               className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors"
             >
               開始する

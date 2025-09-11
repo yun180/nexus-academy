@@ -152,39 +152,30 @@ export async function POST(request: NextRequest) {
 }
 
 function createSystemPrompt(subject: string, responseType: string): string {
-  const isEnglish = subject === '英語';
-  const basePrompt = isEnglish 
-    ? `You are an English learning support AI. Please respond in English.`
-    : `あなたは${subject}の学習支援AIです。日本語で回答してください。`;
+  const basePrompt = `あなたは${subject}の学習支援AIです。日本語で回答してください。`;
   
   let specificPrompt = '';
-  if (isEnglish) {
-    switch (responseType) {
-      case '解答解説':
-        specificPrompt = 'Provide the answer and explain in detail why that is the correct answer. Include step-by-step explanations and reasoning.';
-        break;
-      case '解法':
-        specificPrompt = 'Explain the methods and procedures to solve this problem step by step. Include specific tips and key points for solving.';
-        break;
-      case 'ヒント':
-        specificPrompt = 'Provide hints to solve this problem. Do not give the answer directly, but guide the thinking process and direction.';
-        break;
-      case '動画解説':
-        specificPrompt = 'Provide a comprehensive video explanation with step-by-step solutions and clear explanations.';
-        break;
-    }
-  } else {
-    switch (responseType) {
-      case '解答解説':
-        specificPrompt = '問題の解答を示し、なぜその答えになるのかを詳しく解説してください。計算過程も含めて説明してください。';
-        break;
-      case '解法':
-        specificPrompt = '問題を解くための手順や方法を段階的に説明してください。具体的な解き方のコツやポイントも含めてください。';
-        break;
-      case 'ヒント':
-        specificPrompt = '問題を解くためのヒントを提供してください。答えを直接教えるのではなく、考え方の方向性を示してください。';
-        break;
-    }
+  switch (responseType) {
+    case '解答解説':
+      specificPrompt = subject === '英語' 
+        ? '英語の問題の解答を示し、なぜその答えになるのかを日本語で詳しく解説してください。文法規則や語彙の使い方も含めて説明してください。'
+        : '問題の解答を示し、なぜその答えになるのかを詳しく解説してください。計算過程も含めて説明してください。';
+      break;
+    case '解法':
+      specificPrompt = subject === '英語'
+        ? '英語の問題を解くための手順や方法を日本語で段階的に説明してください。具体的な解き方のコツやポイントも含めてください。'
+        : '問題を解くための手順や方法を段階的に説明してください。具体的な解き方のコツやポイントも含めてください。';
+      break;
+    case 'ヒント':
+      specificPrompt = subject === '英語'
+        ? '英語の問題を解くためのヒントを日本語で提供してください。答えを直接教えるのではなく、考え方の方向性を示してください。'
+        : '問題を解くためのヒントを提供してください。答えを直接教えるのではなく、考え方の方向性を示してください。';
+      break;
+    case '動画解説':
+      specificPrompt = subject === '英語'
+        ? '英語の問題について包括的な動画解説を日本語で提供してください。段階的な解決方法と明確な説明を含めてください。'
+        : '包括的な動画解説を提供してください。段階的な解決方法と明確な説明を含めてください。';
+      break;
   }
 
   const mathSymbolPrompt = subject === '数学' ? 

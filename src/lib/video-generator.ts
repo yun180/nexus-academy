@@ -100,25 +100,13 @@ function parseSolutionSteps(solution: string): string[] {
 }
 
 function getTitle(responseType: string, subject: string): string {
-  const isEnglish = subject === '英語';
-  
-  if (isEnglish) {
-    const englishTitles: { [key: string]: string } = {
-      '解答解説': `${subject} Answer Explanation`,
-      '解法': `${subject} Solution Method`,
-      'ヒント': `${subject} Hints`,
-      '動画解説': `${subject} Video Explanation`
-    };
-    return englishTitles[responseType] || `${subject} Explanation`;
-  } else {
-    const japaneseTitles: { [key: string]: string } = {
-      '解答解説': `${subject}の解答解説`,
-      '解法': `${subject}の解法`,
-      'ヒント': `${subject}のヒント`,
-      '動画解説': `${subject}の動画解説`
-    };
-    return japaneseTitles[responseType] || `${subject}の解説`;
-  }
+  const titles: { [key: string]: string } = {
+    '解答解説': `${subject}の解答解説`,
+    '解法': `${subject}の解法`,
+    'ヒント': `${subject}のヒント`,
+    '動画解説': `${subject}の動画解説`
+  };
+  return titles[responseType] || `${subject}の解説`;
 }
 
 function escapePythonString(str: string): string {

@@ -151,13 +151,22 @@ function createSystemPrompt(subject: string, responseType: string): string {
   }
 
   const mathSymbolPrompt = subject === '数学' ? 
-    '\n\n数学記号について：\n- 加算は「＋」を使用\n- 減算は「−」を使用\n- 乗算は「×」を使用\n- 除算は「÷」を使用\n- 累乗は上付き文字を使用（例：x²、a³）\n- 平方根は「√」を使用\n- 分数は「/」または分数表記を使用\n\n文字化けを避けるため、これらの記号を正確に使用してください。' : '';
+    '\n\n数学記号について：\n- 加算は「＋」を使用\n- 減算は「−」を使用\n- 乗算は「×」を使用\n- 除算は「÷」を使用\n- 累乗は上付き文字を使用（例：x²、a³）\n- 平方根は「√」を使用\n- 分数は「/」または分数表記を使用\n- LaTeX記法（\\(、\\)、\\frac{}{}など）は使用しないでください\n- 括弧や特殊記号は最小限に抑えてください\n\n文字化けを避けるため、これらの記号を正確に使用してください。' : '';
 
   return basePrompt + '\n\n' + specificPrompt + mathSymbolPrompt;
 }
 
 function formatMathResponse(response: string): string {
   return response
+    .replace(/\\?\\\(/g, '')
+    .replace(/\\?\\\)/g, '')
+    .replace(/\\\[/g, '')
+    .replace(/\\\]/g, '')
+    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2')
+    .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
+    .replace(/\\[a-zA-Z]+/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/^\s+|\s+$/g, '')
     .replace(/\+/g, '＋')
     .replace(/-/g, '−')
     .replace(/\*/g, '×')
@@ -167,6 +176,6 @@ function formatMathResponse(response: string): string {
         '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
         '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
       };
-      return num.split('').map(digit => superscripts[digit] || digit).join('');
+      return num.split('').map((digit: string) => superscripts[digit] || digit).join('');
     });
 }

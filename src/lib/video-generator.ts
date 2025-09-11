@@ -66,7 +66,7 @@ import os
 class ${videoId}(Scene):
     def construct(self):
         # Title based on response type
-        title_text = "${getJapaneseTitle(responseType, subject)}"
+        title_text = "${getTitle(responseType, subject)}"
         title = Text(title_text, font_size=48, color=BLUE)
         title.to_edge(UP)
         self.play(Write(title))
@@ -95,18 +95,30 @@ if __name__ == "__main__":
 }
 
 function parseSolutionSteps(solution: string): string[] {
-  const steps = solution.split(/[。\n]/).filter(step => step.trim().length > 0);
+  const steps = solution.split(/[。.\n]/).filter(step => step.trim().length > 0);
   return steps.map(step => step.trim());
 }
 
-function getJapaneseTitle(responseType: string, subject: string): string {
-  const titles: { [key: string]: string } = {
-    '解答解説': `${subject}の解答解説`,
-    '解法': `${subject}の解法`,
-    'ヒント': `${subject}のヒント`,
-    '動画解説': `${subject}の動画解説`
-  };
-  return titles[responseType] || `${subject}の解説`;
+function getTitle(responseType: string, subject: string): string {
+  const isEnglish = subject === '英語';
+  
+  if (isEnglish) {
+    const englishTitles: { [key: string]: string } = {
+      '解答解説': `${subject} Answer Explanation`,
+      '解法': `${subject} Solution Method`,
+      'ヒント': `${subject} Hints`,
+      '動画解説': `${subject} Video Explanation`
+    };
+    return englishTitles[responseType] || `${subject} Explanation`;
+  } else {
+    const japaneseTitles: { [key: string]: string } = {
+      '解答解説': `${subject}の解答解説`,
+      '解法': `${subject}の解法`,
+      'ヒント': `${subject}のヒント`,
+      '動画解説': `${subject}の動画解説`
+    };
+    return japaneseTitles[responseType] || `${subject}の解説`;
+  }
 }
 
 function escapePythonString(str: string): string {

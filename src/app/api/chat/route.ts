@@ -112,9 +112,9 @@ export async function POST(request: NextRequest) {
     const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
     
     let videoUrl = null;
-    if (responseType === '動画解説' && subject === '数学') {
+    if (responseType === '動画解説' && (subject === '数学' || subject === '英語')) {
       try {
-        const problemText = message || '数学の問題';
+        const problemText = message || (subject === '英語' ? 'English problem' : '数学の問題');
         videoUrl = await generateMathVideo({
           problem: problemText,
           solution: response,
@@ -152,19 +152,39 @@ export async function POST(request: NextRequest) {
 }
 
 function createSystemPrompt(subject: string, responseType: string): string {
-  const basePrompt = `あなたは${subject}の学習支援AIです。日本語で回答してください。`;
+  const isEnglish = subject === '英語';
+  const basePrompt = isEnglish 
+    ? `You are an English learning support AI. Please respond in English.`
+    : `あなたは${subject}の学習支援AIです。日本語で回答してください。`;
   
   let specificPrompt = '';
-  switch (responseType) {
-    case '解答解説':
-      specificPrompt = '問題の解答を示し、なぜその答えになるのかを詳しく解説してください。計算過程も含めて説明してください。';
-      break;
-    case '解法':
-      specificPrompt = '問題を解くための手順や方法を段階的に説明してください。具体的な解き方のコツやポイントも含めてください。';
-      break;
-    case 'ヒント':
-      specificPrompt = '問題を解くためのヒントを提供してください。答えを直接教えるのではなく、考え方の方向性を示してください。';
-      break;
+  if (isEnglish) {
+    switch (responseType) {
+      case '解答解説':
+        specificPrompt = 'Provide the answer and explain in detail why that is the correct answer. Include step-by-step explanations and reasoning.';
+        break;
+      case '解法':
+        specificPrompt = 'Explain the methods and procedures to solve this problem step by step. Include specific tips and key points for solving.';
+        break;
+      case 'ヒント':
+        specificPrompt = 'Provide hints to solve this problem. Do not give the answer directly, but guide the thinking process and direction.';
+        break;
+      case '動画解説':
+        specificPrompt = 'Provide a comprehensive video explanation with step-by-step solutions and clear explanations.';
+        break;
+    }
+  } else {
+    switch (responseType) {
+      case '解答解説':
+        specificPrompt = '問題の解答を示し、なぜその答えになるのかを詳しく解説してください。計算過程も含めて説明してください。';
+        break;
+      case '解法':
+        specificPrompt = '問題を解くための手順や方法を段階的に説明してください。具体的な解き方のコツやポイントも含めてください。';
+        break;
+      case 'ヒント':
+        specificPrompt = '問題を解くためのヒントを提供してください。答えを直接教えるのではなく、考え方の方向性を示してください。';
+        break;
+    }
   }
 
   const mathSymbolPrompt = subject === '数学' ? 

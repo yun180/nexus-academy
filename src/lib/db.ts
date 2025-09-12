@@ -35,6 +35,7 @@ export async function initDatabase() {
         date DATE NOT NULL,
         gen_count INTEGER DEFAULT 0,
         navi_count INTEGER DEFAULT 0,
+        ai_chat_count INTEGER DEFAULT 0,
         quiz_count INTEGER DEFAULT 0,
         learning_pick_count INTEGER DEFAULT 0,
         UNIQUE(user_id, date)

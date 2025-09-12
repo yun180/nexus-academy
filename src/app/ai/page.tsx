@@ -68,14 +68,30 @@ export default function AIPage() {
         <h1 className="text-2xl font-bold text-gray-900">学習サポート</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200 p-6 text-center hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg border-2 border-cyan-200 p-6 text-center hover:shadow-lg transition-shadow">
+            <div className="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
+            <h3 className="text-lg font-semibold text-cyan-900 mb-2">AIチャット</h3>
+            <p className="text-cyan-700 mb-6">シンプルなAI会話（無制限）</p>
+            <button
+              onClick={() => window.location.href = '/ai-chat'}
+              className="w-full bg-cyan-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-cyan-600 transition-colors"
+            >
+              開始する
+            </button>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200 p-6 text-center hover:shadow-lg transition-shadow">
+            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
             <h3 className="text-lg font-semibold text-blue-900 mb-2">ソリューションナビ</h3>
-            <p className="text-blue-700 mb-6">AIチャットで疑問解決</p>
+            <p className="text-blue-700 mb-6">高度なAI学習サポート（動画解説付き）</p>
             <button
               onClick={() => window.location.href = '/chat'}
               className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors"

@@ -166,7 +166,7 @@ export default function ChatPage() {
       <div className="max-w-4xl mx-auto h-[calc(100vh-200px)] flex flex-col">
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-4 p-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-gray-900">AIチャット - ソリューションナビ</h1>
+            <h1 className="text-xl font-bold text-gray-900">ソリューションナビ</h1>
             {user?.plan === 'free' && (
               <div className="text-sm text-gray-600">
                 残り利用回数: {3 - usageCount}回
@@ -214,6 +214,7 @@ export default function ChatPage() {
                 </div>
                 <p>数学や英語の質問をしてください。</p>
                 <p className="text-sm mt-2">画像をアップロードして問題を送ることもできます。</p>
+                <p className="text-sm mt-1 text-blue-600">動画解説機能付きの高度なAI学習サポート</p>
               </div>
             )}
 

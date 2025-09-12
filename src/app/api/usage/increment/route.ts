@@ -70,14 +70,14 @@ export async function POST(request: NextRequest) {
     const maxLimit = type === 'gen' ? GEN_MAX_PER_DAY : NAVI_MAX_PER_DAY;
     const currentCount = type === 'gen' ? currentUsage.gen_count : currentUsage.navi_count;
     
-    if (currentCount >= maxLimit) {
-      return NextResponse.json({ 
-        error: `Daily limit exceeded. ${type === 'gen' ? 'Material generation' : 'Solution navigator'} limit is ${maxLimit} per day.`,
-        limit_exceeded: true,
-        current_count: currentCount,
-        max_limit: maxLimit
-      }, { status: 400 });
-    }
+    // if (currentCount >= maxLimit) {
+    //   return NextResponse.json({ 
+    //     error: `Daily limit exceeded. ${type === 'gen' ? 'Material generation' : 'Solution navigator'} limit is ${maxLimit} per day.`,
+    //     limit_exceeded: true,
+    //     current_count: currentCount,
+    //     max_limit: maxLimit
+    //   }, { status: 400 });
+    // }
 
     if (usageResult.rows.length === 0) {
       await query(

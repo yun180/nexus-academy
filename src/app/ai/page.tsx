@@ -110,12 +110,8 @@ export default function AIPage() {
             <p className="text-green-700 mb-6">学習カレンダーを自動生成</p>
             <button
               onClick={() => handleFeatureClick('goal-planner')}
-              disabled={user?.plan !== 'plus'}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                user?.plan === 'plus'
-                  ? 'bg-green-500 text-white hover:bg-green-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              disabled={false}
+              className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-600 transition-colors"
             >
               開始する
             </button>
@@ -131,12 +127,8 @@ export default function AIPage() {
             <p className="text-purple-700 mb-6">AI小テスト機能</p>
             <button
               onClick={() => handleFeatureClick('challenge-match')}
-              disabled={user?.plan !== 'plus'}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                user?.plan === 'plus'
-                  ? 'bg-purple-500 text-white hover:bg-purple-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              disabled={false}
+              className="w-full bg-purple-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-600 transition-colors"
             >
               開始する
             </button>
@@ -152,12 +144,8 @@ export default function AIPage() {
             <p className="text-orange-700 mb-6">手書き答案の自動採点</p>
             <button
               onClick={() => handleFeatureClick('answer-checker')}
-              disabled={user?.plan !== 'plus'}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                user?.plan === 'plus'
-                  ? 'bg-orange-500 text-white hover:bg-orange-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              disabled={false}
+              className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors"
             >
               開始する
             </button>
@@ -173,12 +161,8 @@ export default function AIPage() {
             <p className="text-red-700 mb-6">苦手単元を分析し教材レコメンド</p>
             <button
               onClick={() => handleFeatureClick('learning-pick')}
-              disabled={user?.plan !== 'plus'}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                user?.plan === 'plus'
-                  ? 'bg-red-500 text-white hover:bg-red-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              disabled={false}
+              className="w-full bg-red-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-600 transition-colors"
             >
               開始する
             </button>
@@ -194,12 +178,8 @@ export default function AIPage() {
             <p className="text-indigo-700 mb-6">最適な学習教材を推薦</p>
             <button
               onClick={() => window.location.href = '/material-recommend'}
-              disabled={user?.plan !== 'plus'}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                user?.plan === 'plus'
-                  ? 'bg-indigo-500 text-white hover:bg-indigo-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              disabled={false}
+              className="w-full bg-indigo-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-600 transition-colors"
             >
               開始する
             </button>

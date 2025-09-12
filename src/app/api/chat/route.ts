@@ -45,25 +45,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (user.plan === 'free' && process.env.AUTH_DEV_BYPASS !== '1') {
-      try {
-        const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-        const usageResult = await query(
-          'SELECT navi_count FROM usage_logs WHERE user_id = $1 AND date = $2',
-          [session.userId, today]
-        );
+    // if (user.plan === 'free' && process.env.AUTH_DEV_BYPASS !== '1') {
+    //   try {
+    //     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+    //     const usageResult = await query(
+    //       'SELECT navi_count FROM usage_logs WHERE user_id = $1 AND date = $2',
+    //       [session.userId, today]
+    //     );
 
-        const currentUsage = usageResult.rows[0]?.navi_count || 0;
-        if (currentUsage >= 3) {
-          return NextResponse.json({ 
-            error: 'Daily limit exceeded',
-            feature: 'chat-limit'
-          }, { status: 403 });
-        }
-      } catch (dbError) {
-        console.error('Usage check error:', dbError);
-      }
-    }
+    //     const currentUsage = usageResult.rows[0]?.navi_count || 0;
+    //     if (currentUsage >= 3) {
+    //       return NextResponse.json({ 
+    //         error: 'Daily limit exceeded',
+    //         feature: 'chat-limit'
+    //       }, { status: 403 });
+    //     }
+    //   } catch (dbError) {
+    //     console.error('Usage check error:', dbError);
+    //   }
+    // }
 
     let imageContent = '';
     if (image) {
@@ -126,19 +126,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (user.plan === 'free' && process.env.AUTH_DEV_BYPASS !== '1') {
-      try {
-        const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-        await query(`
-          INSERT INTO usage_logs (user_id, date, navi_count)
-          VALUES ($1, $2, 1)
-          ON CONFLICT (user_id, date)
-          DO UPDATE SET navi_count = usage_logs.navi_count + 1
-        `, [session.userId, today]);
-      } catch (dbError) {
-        console.error('Usage update error:', dbError);
-      }
-    }
+    // if (user.plan === 'free' && process.env.AUTH_DEV_BYPASS !== '1') {
+    //   try {
+    //     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+    //     await query(`
+    //       INSERT INTO usage_logs (user_id, date, navi_count)
+    //       VALUES ($1, $2, 1)
+    //       ON CONFLICT (user_id, date)
+    //       DO UPDATE SET navi_count = usage_logs.navi_count + 1
+    //     `, [session.userId, today]);
+    //   } catch (dbError) {
+    //     console.error('Usage update error:', dbError);
+    //   }
+    // }
 
     return NextResponse.json({
       success: true,

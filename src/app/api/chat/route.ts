@@ -70,8 +70,11 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = createSystemPrompt(subject, responseType);
     
-    const messages = [
-      { role: 'system' as const, content: systemPrompt }
+    const messages: Array<{
+      role: 'system' | 'user';
+      content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
+    }> = [
+      { role: 'system', content: systemPrompt }
     ];
 
     if (imageContent && message) {

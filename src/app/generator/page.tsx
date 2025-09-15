@@ -81,7 +81,7 @@ export default function GeneratorPage() {
     }
 
     if (user?.plan === 'free') {
-      if (limits && limits.gen_left <= 0) {
+      if (limits && !limits.unlimited && limits.gen_left <= 0) {
         setShowUpgradeModal(true);
         return;
       }
@@ -224,7 +224,7 @@ export default function GeneratorPage() {
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-yellow-800">FREE版制限</h3>
                   <div className="mt-2 text-sm text-yellow-700">
-                    <p>• 1日10回まで生成可能 {limits && `(残り${limits.gen_left}回)`}</p>
+                    <p>• 1日10回まで生成可能 {limits && (limits.unlimited ? '(無制限)' : `(残り${limits.gen_left}回)`)}</p>
                     <p>• 生成前に5秒の広告視聴が必要</p>
                   </div>
                 </div>
@@ -343,9 +343,9 @@ export default function GeneratorPage() {
 
             <button
               onClick={handleGenerate}
-              disabled={generating || !subject || !grade || !unit || !difficulty || (user?.plan === 'free' && (limits?.gen_left ?? 0) <= 0)}
+              disabled={generating || !subject || !grade || !unit || !difficulty || (user?.plan === 'free' && !limits?.unlimited && (limits?.gen_left ?? 0) <= 0)}
               className={`w-full py-3 px-4 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                generating || !subject || !grade || !unit || !difficulty || (user?.plan === 'free' && (limits?.gen_left ?? 0) <= 0)
+                generating || !subject || !grade || !unit || !difficulty || (user?.plan === 'free' && !limits?.unlimited && (limits?.gen_left ?? 0) <= 0)
                   ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
@@ -353,7 +353,7 @@ export default function GeneratorPage() {
               {generating 
                 ? '生成中...' 
                 : user?.plan === 'free' 
-                  ? (limits?.gen_left ?? 0) <= 0 
+                  ? (!limits?.unlimited && (limits?.gen_left ?? 0) <= 0)
                     ? '本日の上限に達しました'
                     : '広告視聴後に生成開始' 
                   : '教材生成開始'

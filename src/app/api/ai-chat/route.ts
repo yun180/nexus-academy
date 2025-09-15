@@ -9,9 +9,12 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('AI Chat API called - starting request processing');
+    
     const session = await getCurrentUser();
     
     const shouldBypass = process.env.NODE_ENV === 'production' || process.env.AUTH_DEV_BYPASS === '1';
+    console.log('Authentication bypass check:', { shouldBypass, hasSession: !!session, nodeEnv: process.env.NODE_ENV });
     
     if (!session && shouldBypass) {
       console.log('Bypassing authentication for testing - session is null');
@@ -24,8 +27,15 @@ export async function POST(request: NextRequest) {
     const subject = formData.get('subject') as string;
     const responseType = formData.get('responseType') as string;
 
+    console.log('Form data received:', { message: message?.substring(0, 50), subject, responseType });
+
     if (!message) {
       return NextResponse.json({ error: 'Message required' }, { status: 400 });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY is not set');
+      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
     }
 
     let user = { plan: 'free' };
@@ -51,12 +61,14 @@ export async function POST(request: NextRequest) {
     }
 
     const systemPrompt = createSystemPrompt(subject, responseType);
+    console.log('System prompt created for subject:', subject, 'responseType:', responseType);
     
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: message }
     ];
 
+    console.log('Calling OpenAI API...');
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages,
@@ -65,6 +77,7 @@ export async function POST(request: NextRequest) {
     });
 
     const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
+    console.log('OpenAI API response received, length:', response.length);
 
     if (session && session.userId) {
       try {
@@ -80,12 +93,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const formattedResponse = formatMathResponse(response);
+    console.log('Sending successful response');
+    
     return NextResponse.json({
       success: true,
-      response: formatMathResponse(response)
+      response: formattedResponse
     });
   } catch (error) {
-    console.error('AI Chat error:', error);
+    console.error('AI Chat error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error
+    });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

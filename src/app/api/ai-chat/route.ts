@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
 
-    if (session) {
+    if (session && session.userId) {
       try {
         const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
         await query(`

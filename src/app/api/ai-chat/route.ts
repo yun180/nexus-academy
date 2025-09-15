@@ -10,8 +10,11 @@ const openai = new OpenAI({
 export async function POST(request: NextRequest) {
   try {
     const session = await getCurrentUser();
-    if (!session && process.env.NODE_ENV === 'production') {
-      console.log('Bypassing authentication for testing in production');
+    
+    const shouldBypass = process.env.NODE_ENV === 'production' || process.env.AUTH_DEV_BYPASS === '1';
+    
+    if (!session && shouldBypass) {
+      console.log('Bypassing authentication for testing - session is null');
     } else if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     let user = { plan: 'free' };
     
-    if (process.env.AUTH_DEV_BYPASS !== '1' && session) {
+    if (!shouldBypass && session && session.userId) {
       try {
         const userResult = await query(
           'SELECT plan FROM users WHERE id = $1',
@@ -43,6 +46,8 @@ export async function POST(request: NextRequest) {
         console.error('Database error, using dev mode:', dbError);
         user = { plan: 'free' };
       }
+    } else {
+      console.log('Skipping database query - using default user plan: free');
     }
 
     const systemPrompt = createSystemPrompt(subject, responseType);

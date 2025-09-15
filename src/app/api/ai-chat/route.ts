@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = createSystemPrompt(subject, responseType);
     
-    const messages: any[] = [
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: message }
     ];

@@ -102,7 +102,7 @@ export default function HomePage() {
               <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${limits?.unlimited ? 100 : ((3 - (limits?.navi_left || 0)) / 3) * 100}%` }} />
             </div>
             <button 
-              onClick={() => window.location.href = '/ai'}
+              onClick={() => window.location.href = '/ai-chat'}
               className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600"
             >
               開始する

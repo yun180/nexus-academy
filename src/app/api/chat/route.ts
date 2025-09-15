@@ -25,8 +25,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message or image required' }, { status: 400 });
     }
 
-    let user = { plan: 'free' };
-    
     if (process.env.AUTH_DEV_BYPASS !== '1') {
       try {
         const userResult = await query(
@@ -37,11 +35,8 @@ export async function POST(request: NextRequest) {
         if (userResult.rows.length === 0) {
           return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
-
-        user = userResult.rows[0];
       } catch (dbError) {
         console.error('Database error, using dev mode:', dbError);
-        user = { plan: 'free' };
       }
     }
 
@@ -75,7 +70,10 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = createSystemPrompt(subject, responseType);
     
-    const messages: any[] = [
+    const messages: Array<{
+      role: 'system' | 'user';
+      content: string | Array<{ type: 'text' | 'image_url'; text?: string; image_url?: { url: string } }>;
+    }> = [
       { role: 'system', content: systemPrompt }
     ];
 

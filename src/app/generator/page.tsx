@@ -24,6 +24,8 @@ export default function GeneratorPage() {
       answer: string;
       explanation: string;
     }>;
+    spreadsheetUrl?: string;
+    documentUrl?: string;
   } | null>(null);
   const [subject, setSubject] = useState('');
   const [grade, setGrade] = useState('');
@@ -372,7 +374,7 @@ export default function GeneratorPage() {
                   </p>
                 </div>
                 
-                <div className="flex space-x-4">
+                <div className="flex flex-wrap gap-4">
                   <button
                     onClick={handleViewPDF}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -385,6 +387,26 @@ export default function GeneratorPage() {
                   >
                     PDFをダウンロード
                   </button>
+                  {result.spreadsheetUrl && (
+                    <a
+                      href={result.spreadsheetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      スプレッドシートで開く
+                    </a>
+                  )}
+                  {result.documentUrl && (
+                    <a
+                      href={result.documentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      ドキュメントで開く
+                    </a>
+                  )}
                 </div>
                 
                 {result.problems && result.problems.length > 0 && (

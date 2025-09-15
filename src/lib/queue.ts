@@ -1,6 +1,7 @@
 import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
-import OpenAI from 'openai';
+import { getAIProvider } from './ai-providers';
+import { GoogleWorkspaceIntegration } from './google-workspace';
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
@@ -32,6 +33,8 @@ export interface GenerateJobResult {
     answer: string;
     explanation: string;
   }>;
+  spreadsheetUrl?: string;
+  documentUrl?: string;
 }
 
 export const createGenerateWorker = () => {
@@ -42,27 +45,19 @@ export const createGenerateWorker = () => {
       
       await job.updateProgress(25);
       
-      const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-      
-      const systemPrompt = createMaterialGenerationPrompt(payload.subject, payload.grade, payload.unit, payload.difficulty);
+      const aiProvider = getAIProvider();
       
       await job.updateProgress(50);
       
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `${payload.subject}の${payload.unit}について、${payload.difficulty}レベルの問題を3問作成してください。` }
-        ],
-        max_tokens: 2000,
-        temperature: 0.7,
-      });
+      const response = await aiProvider.generateMaterialContent(
+        payload.subject,
+        payload.grade,
+        payload.unit,
+        payload.difficulty
+      );
       
       await job.updateProgress(75);
       
-      const response = completion.choices[0]?.message?.content || '';
       const parsedContent = parseGeneratedContent(response);
       const formattedContent = formatMathResponse(parsedContent);
       
@@ -74,6 +69,21 @@ export const createGenerateWorker = () => {
         difficulty: payload.difficulty,
         problems: formattedContent.problems
       };
+      
+      try {
+        const workspace = new GoogleWorkspaceIntegration();
+        const spreadsheetUrl = await workspace.saveToSpreadsheet(result, userId);
+        const documentUrl = await workspace.saveToDocument(result, userId);
+        
+        result.spreadsheetUrl = spreadsheetUrl;
+        result.documentUrl = documentUrl;
+        
+        console.log(`Google Workspace integration completed for user ${userId}`);
+        console.log(`Spreadsheet: ${spreadsheetUrl}`);
+        console.log(`Document: ${documentUrl}`);
+      } catch (error) {
+        console.error('Google Workspace integration error:', error);
+      }
       
       await job.updateProgress(100);
       

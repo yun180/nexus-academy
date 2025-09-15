@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { generateMathVideo } from '@/lib/video-generator';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getAIProvider } from '@/lib/ai-providers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,9 +29,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message or image required' }, { status: 400 });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY is not set');
-      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
+    if (!process.env.GOOGLE_AI_API_KEY) {
+      console.error('GOOGLE_AI_API_KEY is not set');
+      return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
     console.log('Form data received:', { message: message?.substring(0, 50), subject, responseType, hasImage: !!image });
@@ -90,46 +86,20 @@ export async function POST(request: NextRequest) {
       imageContent = `data:${image.type};base64,${base64}`;
     }
 
+    const aiProvider = getAIProvider();
     const systemPrompt = createSystemPrompt(subject, responseType);
     console.log('System prompt created for subject:', subject, 'responseType:', responseType);
-    
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt }
-    ];
 
+    let fullPrompt = message;
     if (imageContent && message) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: message },
-          { type: 'image_url', image_url: { url: imageContent } }
-        ]
-      });
+      fullPrompt = `${message}\n[Image provided - please analyze the mathematical content in the image]`;
     } else if (imageContent) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: `この${subject}の問題について${responseType}をお願いします。` },
-          { type: 'image_url', image_url: { url: imageContent } }
-        ]
-      });
-    } else {
-      messages.push({
-        role: 'user',
-        content: message
-      });
+      fullPrompt = `この${subject}の問題について${responseType}をお願いします。\n[Image provided - please analyze the mathematical content in the image]`;
     }
 
-    console.log('Calling OpenAI API...');
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages,
-      max_tokens: 1000,
-      temperature: 0.7,
-    });
-
-    const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
-    console.log('OpenAI API response received, length:', response.length);
+    console.log('Calling Gemini API...');
+    const response = await aiProvider.generateContent(fullPrompt, systemPrompt);
+    console.log('Gemini API response received, length:', response.length);
     
     let videoUrl = null;
     if (responseType === '動画解説' && (subject === '数学' || subject === '英語')) {

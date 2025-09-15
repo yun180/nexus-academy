@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getAIProvider } from '@/lib/ai-providers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,9 +29,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message required' }, { status: 400 });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY is not set');
-      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
+    if (!process.env.GOOGLE_AI_API_KEY) {
+      console.error('GOOGLE_AI_API_KEY is not set');
+      return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
     let user = { plan: 'free' };
@@ -60,24 +56,13 @@ export async function POST(request: NextRequest) {
       console.log('Skipping database query - using default user plan: free');
     }
 
+    const aiProvider = getAIProvider();
     const systemPrompt = createSystemPrompt(subject, responseType);
     console.log('System prompt created for subject:', subject, 'responseType:', responseType);
-    
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: message }
-    ];
 
-    console.log('Calling OpenAI API...');
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages,
-      max_tokens: 1000,
-      temperature: 0.7,
-    });
-
-    const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
-    console.log('OpenAI API response received, length:', response.length);
+    console.log('Calling Gemini API...');
+    const response = await aiProvider.generateContent(message, systemPrompt);
+    console.log('Gemini API response received, length:', response.length);
 
     if (session && session.userId) {
       try {

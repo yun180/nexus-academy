@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import AdModal from '@/components/AdModal';
 import UpgradeModal from '@/components/UpgradeModal';
+import { pdf } from '@react-pdf/renderer';
+import PDFDocument from '@/components/PDFDocument';
 
 export default function GeneratorPage() {
   const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
@@ -13,16 +15,20 @@ export default function GeneratorPage() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<{
     title: string;
-    content: string;
+    subject: string;
+    grade: string;
+    unit: string;
     difficulty: string;
-    questions?: Array<{
+    problems: Array<{
       question: string;
-      options: string[];
-      correct: number;
+      answer: string;
+      explanation: string;
     }>;
   } | null>(null);
-  const [content, setContent] = useState('');
-  const [difficulty, setDifficulty] = useState('基礎');
+  const [subject, setSubject] = useState('');
+  const [grade, setGrade] = useState('');
+  const [unit, setUnit] = useState('');
+  const [difficulty, setDifficulty] = useState('');
   const [limits, setLimits] = useState<{
     gen_left: number;
     navi_left: number;
@@ -69,8 +75,8 @@ export default function GeneratorPage() {
   }, []);
 
   const handleGenerate = async () => {
-    if (!content.trim()) {
-      alert('学習内容を入力してください');
+    if (!subject || !grade || !unit || !difficulty) {
+      alert('すべての項目を選択してください');
       return;
     }
 
@@ -110,7 +116,7 @@ export default function GeneratorPage() {
       const generateResponse = await fetch('/api/generate/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, difficulty }),
+        body: JSON.stringify({ subject, grade, unit, difficulty }),
       });
 
       if (!generateResponse.ok) {
@@ -151,6 +157,46 @@ export default function GeneratorPage() {
     }
   };
 
+  const handleViewPDF = async () => {
+    if (!result) return;
+    
+    const blob = await pdf(
+      <PDFDocument
+        title={result.title}
+        subject={result.subject}
+        grade={result.grade}
+        unit={result.unit}
+        difficulty={result.difficulty}
+        problems={result.problems}
+      />
+    ).toBlob();
+    
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!result) return;
+    
+    const blob = await pdf(
+      <PDFDocument
+        title={result.title}
+        subject={result.subject}
+        grade={result.grade}
+        unit={result.unit}
+        difficulty={result.difficulty}
+        problems={result.problems}
+      />
+    ).toBlob();
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${result.title}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -189,15 +235,93 @@ export default function GeneratorPage() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                学習内容
+                教科
               </label>
-              <textarea
+              <select 
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={4}
-                placeholder="生成したい教材の内容を入力してください..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-              />
+                value={subject}
+                onChange={(e) => {
+                  setSubject(e.target.value);
+                  setGrade('');
+                  setUnit('');
+                  setDifficulty('');
+                }}
+              >
+                <option value="">教科を選択</option>
+                <option value="数学">数学</option>
+                <option value="英語">英語</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                学年
+              </label>
+              <select 
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={grade}
+                onChange={(e) => {
+                  setGrade(e.target.value);
+                  setUnit('');
+                  setDifficulty('');
+                }}
+                disabled={!subject}
+              >
+                <option value="">学年を選択</option>
+                {subject === '数学' && (
+                  <>
+                    <option value="中学1年">中学1年</option>
+                    <option value="中学2年">中学2年</option>
+                    <option value="中学3年">中学3年</option>
+                    <option value="高校1年">高校1年</option>
+                    <option value="高校2年">高校2年</option>
+                    <option value="高校3年">高校3年</option>
+                  </>
+                )}
+                {subject === '英語' && (
+                  <>
+                    <option value="中学1年">中学1年</option>
+                    <option value="中学2年">中学2年</option>
+                    <option value="中学3年">中学3年</option>
+                    <option value="高校1年">高校1年</option>
+                    <option value="高校2年">高校2年</option>
+                    <option value="高校3年">高校3年</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                単元
+              </label>
+              <select 
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={unit}
+                onChange={(e) => {
+                  setUnit(e.target.value);
+                  setDifficulty('');
+                }}
+                disabled={!grade}
+              >
+                <option value="">単元を選択</option>
+                {subject === '数学' && grade && (
+                  <>
+                    <option value="方程式">方程式</option>
+                    <option value="関数">関数</option>
+                    <option value="図形">図形</option>
+                    <option value="確率">確率</option>
+                  </>
+                )}
+                {subject === '英語' && grade && (
+                  <>
+                    <option value="文法">文法</option>
+                    <option value="読解">読解</option>
+                    <option value="語彙">語彙</option>
+                    <option value="作文">作文</option>
+                  </>
+                )}
+              </select>
             </div>
 
             <div>
@@ -208,18 +332,20 @@ export default function GeneratorPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
+                disabled={!unit}
               >
-                <option>基礎</option>
-                <option>標準</option>
-                <option>応用</option>
+                <option value="">難易度を選択</option>
+                <option value="基礎">基礎</option>
+                <option value="標準">標準</option>
+                <option value="応用">応用</option>
               </select>
             </div>
 
             <button
               onClick={handleGenerate}
-              disabled={generating || (user?.plan === 'free' && (limits?.gen_left ?? 0) <= 0)}
+              disabled={generating || !subject || !grade || !unit || !difficulty || (user?.plan === 'free' && (limits?.gen_left ?? 0) <= 0)}
               className={`w-full py-3 px-4 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                generating || (user?.plan === 'free' && (limits?.gen_left ?? 0) <= 0)
+                generating || !subject || !grade || !unit || !difficulty || (user?.plan === 'free' && (limits?.gen_left ?? 0) <= 0)
                   ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
@@ -241,24 +367,43 @@ export default function GeneratorPage() {
               <div className="space-y-4">
                 <div>
                   <h4 className="font-medium text-gray-900">{result.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">難易度: {result.difficulty}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {result.subject} | {result.grade} | {result.unit} | {result.difficulty}
+                  </p>
                 </div>
-                <div>
-                  <p className="text-gray-700">{result.content}</p>
+                
+                <div className="flex space-x-4">
+                  <button
+                    onClick={handleViewPDF}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    PDFを表示
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    PDFをダウンロード
+                  </button>
                 </div>
-                {result.questions && result.questions.length > 0 && (
-                  <div>
-                    <h5 className="font-medium text-gray-900 mb-2">練習問題</h5>
-                    {result.questions.map((q, index: number) => (
-                      <div key={index} className="bg-white p-4 rounded border">
-                        <p className="font-medium mb-2">{q.question}</p>
-                        <ul className="space-y-1">
-                          {q.options.map((option: string, optIndex: number) => (
-                            <li key={optIndex} className={`text-sm ${optIndex === q.correct ? 'text-green-600 font-medium' : 'text-gray-600'}`}>
-                              {optIndex === q.correct ? '✓ ' : '• '}{option}
-                            </li>
-                          ))}
-                        </ul>
+                
+                {result.problems && result.problems.length > 0 && (
+                  <div className="mt-6">
+                    <h5 className="font-medium text-gray-900 mb-4">プレビュー</h5>
+                    {result.problems.map((problem, index) => (
+                      <div key={index} className="bg-white p-4 rounded border mb-4">
+                        <div className="mb-3">
+                          <h6 className="font-medium text-gray-900 mb-2">問題 {index + 1}</h6>
+                          <p className="text-gray-700">{problem.question}</p>
+                        </div>
+                        <div className="mb-3">
+                          <h6 className="font-medium text-gray-900 mb-2">解答</h6>
+                          <p className="text-gray-700">{problem.answer}</p>
+                        </div>
+                        <div>
+                          <h6 className="font-medium text-gray-900 mb-2">解説</h6>
+                          <p className="text-gray-700">{problem.explanation}</p>
+                        </div>
                       </div>
                     ))}
                   </div>

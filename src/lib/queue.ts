@@ -1,5 +1,6 @@
 import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
+import OpenAI from 'openai';
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
@@ -13,19 +14,23 @@ export const generateQueue = new Queue('generateQueue', {
 export interface GenerateJobData {
   userId: string;
   payload: {
-    content: string;
+    subject: string;
+    grade: string;
+    unit: string;
     difficulty: string;
   };
 }
 
 export interface GenerateJobResult {
   title: string;
-  content: string;
+  subject: string;
+  grade: string;
+  unit: string;
   difficulty: string;
-  questions: Array<{
+  problems: Array<{
     question: string;
-    options: string[];
-    correct: number;
+    answer: string;
+    explanation: string;
   }>;
 }
 
@@ -37,36 +42,37 @@ export const createGenerateWorker = () => {
       
       await job.updateProgress(25);
       
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 1000));
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      
+      const systemPrompt = createMaterialGenerationPrompt(payload.subject, payload.grade, payload.unit, payload.difficulty);
+      
+      await job.updateProgress(50);
+      
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `${payload.subject}の${payload.unit}について、${payload.difficulty}レベルの問題を3問作成してください。` }
+        ],
+        max_tokens: 2000,
+        temperature: 0.7,
+      });
       
       await job.updateProgress(75);
       
+      const response = completion.choices[0]?.message?.content || '';
+      const parsedContent = parseGeneratedContent(response);
+      const formattedContent = formatMathResponse(parsedContent);
+      
       const result: GenerateJobResult = {
-        title: `${payload.difficulty}レベル: ${payload.content.substring(0, 20)}...`,
-        content: `${payload.content}に関する教材を生成しました。これはAIが生成したダミーコンテンツです。実際の実装では、ここに詳細な学習内容が表示されます。`,
+        title: `${payload.subject} ${payload.grade} ${payload.unit} (${payload.difficulty})`,
+        subject: payload.subject,
+        grade: payload.grade,
+        unit: payload.unit,
         difficulty: payload.difficulty,
-        questions: [
-          {
-            question: `${payload.content}に関する基本的な問題です。`,
-            options: [
-              '選択肢A: 正解',
-              '選択肢B: 不正解',
-              '選択肢C: 不正解',
-              '選択肢D: 不正解'
-            ],
-            correct: 0
-          },
-          {
-            question: `${payload.difficulty}レベルの応用問題です。`,
-            options: [
-              '選択肢A: 不正解',
-              '選択肢B: 正解',
-              '選択肢C: 不正解',
-              '選択肢D: 不正解'
-            ],
-            correct: 1
-          }
-        ]
+        problems: formattedContent.problems
       };
       
       await job.updateProgress(100);
@@ -118,4 +124,110 @@ export async function getJobStatus(jobId: string) {
       progress: 0
     };
   }
+}
+
+function createMaterialGenerationPrompt(subject: string, grade: string, unit: string, difficulty: string): string {
+  const basePrompt = `あなたは${subject}の教材作成AIです。${grade}の${unit}について、${difficulty}レベルの学習教材を作成してください。`;
+  
+  const formatInstructions = `
+以下の形式で出力してください：
+
+**演算記号**はすべて Unicode 記号を使用：
+- 掛け算：×（U+00D7）
+- 割り算：÷（U+00F7）
+- 引き算：−（U+2212）
+- 足し算：＋（U+002B）
+- 平方根：√（U+221A）
+
+**累乗（指数）**は上付き文字を使用：
+- 例：2², x³, 10⁴
+
+**出力形式**：
+問題1:
+[問題文]
+
+解答1:
+[解答]
+
+解説1:
+[詳しい解説]
+
+問題2:
+[問題文]
+
+解答2:
+[解答]
+
+解説2:
+[詳しい解説]
+
+問題3:
+[問題文]
+
+解答3:
+[解答]
+
+解説3:
+[詳しい解説]
+`;
+  
+  return basePrompt + formatInstructions;
+}
+
+function parseGeneratedContent(content: string): { problems: Array<{ question: string; answer: string; explanation: string; }> } {
+  const problems: Array<{ question: string; answer: string; explanation: string; }> = [];
+  
+  const sections = content.split(/問題\d+:/);
+  
+  for (let i = 1; i < sections.length; i++) {
+    const section = sections[i];
+    const answerMatch = section.match(/解答\d+:\s*([\s\S]*?)(?=解説\d+:|$)/);
+    const explanationMatch = section.match(/解説\d+:\s*([\s\S]*?)(?=問題\d+:|$)/);
+    
+    const questionText = section.split(/解答\d+:/)[0]?.trim() || '';
+    const answerText = answerMatch?.[1]?.trim() || '';
+    const explanationText = explanationMatch?.[1]?.trim() || '';
+    
+    if (questionText && answerText && explanationText) {
+      problems.push({
+        question: questionText,
+        answer: answerText,
+        explanation: explanationText
+      });
+    }
+  }
+  
+  return { problems };
+}
+
+function formatMathResponse(content: { problems: Array<{ question: string; answer: string; explanation: string; }> }): { problems: Array<{ question: string; answer: string; explanation: string; }> } {
+  const formatText = (text: string): string => {
+    return text
+      .replace(/\\?\\\(/g, '')
+      .replace(/\\?\\\)/g, '')
+      .replace(/\\\[/g, '')
+      .replace(/\\\]/g, '')
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1÷$2')
+      .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
+      .replace(/\\[a-zA-Z]+/g, '')
+      .replace(/\+/g, '＋')
+      .replace(/-/g, '−')
+      .replace(/\*/g, '×')
+      .replace(/\//g, '÷')
+      .replace(/\^(\d+)/g, (match, num) => {
+        const superscripts: { [key: string]: string } = {
+          '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+          '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+        };
+        return num.split('').map((digit: string) => superscripts[digit] || digit).join('');
+      });
+  };
+  
+  return {
+    problems: content.problems.map(problem => ({
+      question: formatText(problem.question),
+      answer: formatText(problem.answer),
+      explanation: formatText(problem.explanation)
+    }))
+  };
 }

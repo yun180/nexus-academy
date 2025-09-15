@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
 
     initializeWorker();
 
-    const { content, difficulty } = await request.json();
+    const { subject, grade, unit, difficulty } = await request.json();
     
-    const jobId = await addGenerateJob(session.userId, { content, difficulty });
+    const jobId = await addGenerateJob(session.userId, { subject, grade, unit, difficulty });
 
     return NextResponse.json({ 
       jobId,

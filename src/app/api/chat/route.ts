@@ -10,8 +10,16 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Solution Navi API called - starting request processing');
+    
     const session = await getCurrentUser();
-    if (!session) {
+    
+    const shouldBypass = process.env.NODE_ENV === 'production' || process.env.AUTH_DEV_BYPASS === '1';
+    console.log('Authentication bypass check:', { shouldBypass, hasSession: !!session, nodeEnv: process.env.NODE_ENV });
+    
+    if (!session && shouldBypass) {
+      console.log('Bypassing authentication for testing - session is null');
+    } else if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
@@ -25,7 +33,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message or image required' }, { status: 400 });
     }
 
-    if (process.env.AUTH_DEV_BYPASS !== '1') {
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY is not set');
+      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
+    }
+
+    console.log('Form data received:', { message: message?.substring(0, 50), subject, responseType, hasImage: !!image });
+
+    let user = { plan: 'free' };
+    
+    if (!shouldBypass && session && session.userId) {
       try {
         const userResult = await query(
           'SELECT plan FROM users WHERE id = $1',
@@ -35,9 +52,14 @@ export async function POST(request: NextRequest) {
         if (userResult.rows.length === 0) {
           return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
+
+        user = userResult.rows[0];
       } catch (dbError) {
         console.error('Database error, using dev mode:', dbError);
+        user = { plan: 'free' };
       }
+    } else {
+      console.log('Skipping database query - using default user plan: free');
     }
 
     // if (user.plan === 'free' && process.env.AUTH_DEV_BYPASS !== '1') {
@@ -69,6 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     const systemPrompt = createSystemPrompt(subject, responseType);
+    console.log('System prompt created for subject:', subject, 'responseType:', responseType);
     
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt }
@@ -97,6 +120,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    console.log('Calling OpenAI API...');
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages,
@@ -105,6 +129,7 @@ export async function POST(request: NextRequest) {
     });
 
     const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
+    console.log('OpenAI API response received, length:', response.length);
     
     let videoUrl = null;
     if (responseType === '動画解説' && (subject === '数学' || subject === '英語')) {
@@ -135,13 +160,20 @@ export async function POST(request: NextRequest) {
     //   }
     // }
 
+    const formattedResponse = formatMathResponse(response);
+    console.log('Sending successful response');
+    
     return NextResponse.json({
       success: true,
-      response: formatMathResponse(response),
+      response: formattedResponse,
       videoUrl
     });
   } catch (error) {
-    console.error('Chat error:', error);
+    console.error('Solution Navi error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error
+    });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     message: 'Development logout successful'
   });
 
-  response.cookies.delete('session');
+  response.cookies.delete('auth_session');
 
   return response;
 }

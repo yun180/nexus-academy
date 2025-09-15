@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     if (process.env.AUTH_DEV_BYPASS === '1') {
       const cookieStore = await cookies();
-      const sessionToken = cookieStore.get('session')?.value;
+      const sessionToken = cookieStore.get('auth_session')?.value;
       
       if (sessionToken) {
         try {

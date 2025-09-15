@@ -70,10 +70,7 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = createSystemPrompt(subject, responseType);
     
-    const messages: Array<{
-      role: 'system' | 'user';
-      content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
-    }> = [
+    const messages: any[] = [
       { role: 'system', content: systemPrompt }
     ];
 

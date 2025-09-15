@@ -4,18 +4,16 @@ import { query } from '@/lib/db';
 import { generateMathVideo } from '@/lib/video-generator';
 import OpenAI from 'openai';
 
-interface MessageContent {
-  type: 'text' | 'image_url';
-  text?: string;
-  image_url?: {
-    url: string;
-  };
-}
-
-interface ChatMessage {
+type ChatCompletionMessageParam = {
   role: 'system' | 'user' | 'assistant';
-  content: string | MessageContent[];
-}
+  content: string | Array<{
+    type: 'text' | 'image_url';
+    text?: string;
+    image_url?: {
+      url: string;
+    };
+  }>;
+};
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -83,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = createSystemPrompt(subject, responseType);
     
-    const messages: ChatMessage[] = [
+    const messages: ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt }
     ];
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getAIProvider } from '@/lib/ai-providers';
 import { GoogleWorkspaceIntegration } from '@/lib/google-workspace';
+import { GenerateJobResult } from '@/lib/queue';
 
 function parseGeneratedContent(content: string): { problems: Array<{ question: string; answer: string; explanation: string; }> } {
   const problems: Array<{ question: string; answer: string; explanation: string; }> = [];
@@ -80,16 +81,7 @@ export async function POST(request: NextRequest) {
     const parsedContent = parseGeneratedContent(response);
     const formattedContent = formatMathResponse(parsedContent);
 
-    const result: {
-      title: string;
-      subject: any;
-      grade: any;
-      unit: any;
-      difficulty: any;
-      problems: Array<{ question: string; answer: string; explanation: string; }>;
-      spreadsheetUrl?: string;
-      documentUrl?: string;
-    } = {
+    const result: GenerateJobResult = {
       title: `${subject} ${grade} ${unit} (${difficulty})`,
       subject,
       grade,

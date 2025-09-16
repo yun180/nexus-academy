@@ -87,30 +87,18 @@ export default function GeneratorPage() {
         return;
       }
 
-      const { jobId } = await generateResponse.json();
+      const responseData = await generateResponse.json();
       
-      const checkStatus = async () => {
-        try {
-          const statusResponse = await fetch(`/api/generate/status?jobId=${jobId}`);
-          const statusData = await statusResponse.json();
-          
-          if (statusData.status === 'completed') {
-            setResult(statusData.result);
-            setGenerating(false);
-          } else {
-            setTimeout(checkStatus, 1000);
-          }
-        } catch (error) {
-          console.error('Status check error:', error);
-          setGenerating(false);
-        }
-      };
-
-      setTimeout(checkStatus, 2000);
+      if (responseData.status === 'completed') {
+        setResult(responseData.result);
+      } else {
+        alert('生成中にエラーが発生しました');
+      }
     } catch (error) {
       console.error('Generation error:', error);
-      setGenerating(false);
       alert('生成中にエラーが発生しました');
+    } finally {
+      setGenerating(false);
     }
   };
 

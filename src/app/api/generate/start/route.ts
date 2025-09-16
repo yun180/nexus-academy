@@ -43,13 +43,19 @@ function formatMathResponse(content: { problems: Array<{ question: string; answe
       .replace(/×××/g, 'x')
       .replace(/xxx/g, 'x')
       .replace(/XXX/g, 'x')
+      .replace(/\*\*\*/g, 'x')
+      .replace(/\?\?\?/g, 'x')
       .replace(/\b([a-zA-Z])\s*\+\s*/g, '$1 ＋ ')
+      .replace(/(\d+)\s*\+\s*/g, '$1 ＋ ')
       .replace(/\s*\+\s*/g, ' ＋ ')
       .replace(/\b([a-zA-Z])\s*-\s*/g, '$1 − ')
+      .replace(/(\d+)\s*-\s*/g, '$1 − ')
       .replace(/\s*-\s*/g, ' − ')
       .replace(/\b([a-zA-Z])\s*\*\s*/g, '$1 × ')
+      .replace(/(\d+)\s*\*\s*/g, '$1 × ')
       .replace(/\s*\*\s*/g, ' × ')
       .replace(/\b([a-zA-Z])\s*\/\s*/g, '$1 ÷ ')
+      .replace(/(\d+)\s*\/\s*/g, '$1 ÷ ')
       .replace(/\s*\/\s*/g, ' ÷ ')
       .replace(/\b([a-zA-Z])\^(\d+)/g, (match, variable, num) => {
         const superscripts: { [key: string]: string } = {
@@ -59,6 +65,14 @@ function formatMathResponse(content: { problems: Array<{ question: string; answe
         const superscript = num.split('').map((digit: string) => superscripts[digit] || digit).join('');
         return variable + superscript;
       })
+      .replace(/(\d+)\^(\d+)/g, (match, base, num) => {
+        const superscripts: { [key: string]: string } = {
+          '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+          '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+        };
+        const superscript = num.split('').map((digit: string) => superscripts[digit] || digit).join('');
+        return base + superscript;
+      })
       .replace(/\^(\d+)/g, (match, num) => {
         const superscripts: { [key: string]: string } = {
           '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
@@ -67,6 +81,7 @@ function formatMathResponse(content: { problems: Array<{ question: string; answe
         return num.split('').map((digit: string) => superscripts[digit] || digit).join('');
       })
       .replace(/√\s*(\d+)/g, '√$1')
+      .replace(/sqrt\(([^)]+)\)/g, '√$1')
       .replace(/\s+/g, ' ')
       .trim();
   };

@@ -40,17 +40,19 @@ function formatMathResponse(content: { problems: Array<{ question: string; answe
       .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1÷$2')
       .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
       .replace(/\\[a-zA-Z]+/g, '')
-      .replace(/\+/g, '＋')
-      .replace(/-/g, '−')
-      .replace(/\*/g, '×')
-      .replace(/\//g, '÷')
+      .replace(/\s*\+\s*/g, ' ＋ ')
+      .replace(/\s*-\s*/g, ' − ')
+      .replace(/\s*\*\s*/g, ' × ')
+      .replace(/\s*\/\s*/g, ' ÷ ')
       .replace(/\^(\d+)/g, (match, num) => {
         const superscripts: { [key: string]: string } = {
           '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
           '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
         };
         return num.split('').map((digit: string) => superscripts[digit] || digit).join('');
-      });
+      })
+      .replace(/\s+/g, ' ')
+      .trim();
   };
   
   return {

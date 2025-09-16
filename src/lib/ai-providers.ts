@@ -98,7 +98,8 @@ export class GeminiProvider implements AIProvider {
   private genai: GoogleGenerativeAI;
   
   constructor() {
-    this.genai = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+    const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.nexus_api_key;
+    this.genai = new GoogleGenerativeAI(apiKey!);
   }
   
   async generateContent(prompt: string, systemPrompt: string): Promise<string> {
@@ -182,9 +183,12 @@ export class GeminiProvider implements AIProvider {
 }
 
 export function getAIProvider(): AIProvider {
-  if (process.env.GOOGLE_AI_API_KEY) {
+  const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.nexus_api_key;
+  if (apiKey && apiKey !== 'a') {
     return new GeminiProvider();
-  } else {
+  } else if (process.env.OPENAI_API_KEY) {
     return new OpenAIProvider();
+  } else {
+    throw new Error('No valid AI API key found. Please configure GOOGLE_AI_API_KEY, nexus_api_key, or OPENAI_API_KEY.');
   }
 }

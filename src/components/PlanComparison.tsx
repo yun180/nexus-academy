@@ -6,12 +6,12 @@ export default function PlanComparison() {
   const features = [
     {
       name: '教材生成',
-      free: '1日10回まで + 広告視聴',
+      free: '広告視聴あり',
       plus: '無制限 + 広告なし'
     },
     {
       name: 'ソリューションナビ',
-      free: '1日3回まで',
+      free: '利用可能',
       plus: '無制限'
     },
     {

@@ -38,14 +38,14 @@ export default function UpgradeModal({ isOpen, onClose, reason }: UpgradeModalPr
     switch (reason) {
       case 'generation_limit':
         return {
-          title: '本日の生成回数上限に達しました',
-          description: 'FREE版では1日10回まで教材生成が可能です。無制限で利用するにはPLUSにアップグレードしてください。',
+          title: 'より快適にご利用いただけます',
+          description: 'NEXUS ACADEMY PLUSにアップグレードして、広告なしで快適にご利用ください。',
           benefits: ['教材生成無制限', '広告なし', 'AIサポート5本柱フル解放']
         };
       case 'navigation_limit':
         return {
-          title: '本日のナビ利用回数上限に達しました',
-          description: 'FREE版では1日3回までソリューションナビが利用可能です。無制限で利用するにはPLUSにアップグレードしてください。',
+          title: 'より快適にご利用いただけます',
+          description: 'NEXUS ACADEMY PLUSにアップグレードして、すべての機能を無制限でご利用ください。',
           benefits: ['ソリューションナビ無制限', '全AIサポート機能', '弱点分析レポート']
         };
       case 'feature_locked':

@@ -136,53 +136,6 @@ export async function getJobStatus(jobId: string) {
   }
 }
 
-function createMaterialGenerationPrompt(subject: string, grade: string, unit: string, difficulty: string): string {
-  const basePrompt = `あなたは${subject}の教材作成AIです。${grade}の${unit}について、${difficulty}レベルの学習教材を作成してください。`;
-  
-  const formatInstructions = `
-以下の形式で出力してください：
-
-**演算記号**はすべて Unicode 記号を使用：
-- 掛け算：×（U+00D7）
-- 割り算：÷（U+00F7）
-- 引き算：−（U+2212）
-- 足し算：＋（U+002B）
-- 平方根：√（U+221A）
-
-**累乗（指数）**は上付き文字を使用：
-- 例：2², x³, 10⁴
-
-**出力形式**：
-問題1:
-[問題文]
-
-解答1:
-[解答]
-
-解説1:
-[詳しい解説]
-
-問題2:
-[問題文]
-
-解答2:
-[解答]
-
-解説2:
-[詳しい解説]
-
-問題3:
-[問題文]
-
-解答3:
-[解答]
-
-解説3:
-[詳しい解説]
-`;
-  
-  return basePrompt + formatInstructions;
-}
 
 function parseGeneratedContent(content: string): { problems: Array<{ question: string; answer: string; explanation: string; }> } {
   const problems: Array<{ question: string; answer: string; explanation: string; }> = [];

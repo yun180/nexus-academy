@@ -82,6 +82,7 @@ function formatMathResponse(content: { problems: Array<{ question: string; answe
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Generate start - beginning request processing');
     const session = await getCurrentUser();
     
     const shouldBypass = process.env.NODE_ENV === 'production' || process.env.AUTH_DEV_BYPASS === '1';
@@ -92,12 +93,21 @@ export async function POST(request: NextRequest) {
     }
 
     const { subject, grade, unit, difficulty } = await request.json();
+    console.log('Generate start - request params:', { subject, grade, unit, difficulty });
 
+    console.log('Generate start - getting AI provider');
     const aiProvider = getAIProvider();
+    console.log('Generate start - AI provider obtained, calling generateMaterialContent');
     const response = await aiProvider.generateMaterialContent(subject, grade, unit, difficulty);
+    console.log('Generate start - AI response received, length:', response.length);
 
+    console.log('Generate start - parsing content');
     const parsedContent = parseGeneratedContent(response);
+    console.log('Generate start - parsed problems count:', parsedContent.problems.length);
+    
+    console.log('Generate start - formatting math response');
     const formattedContent = formatMathResponse(parsedContent);
+    console.log('Generate start - formatted problems count:', formattedContent.problems.length);
 
     const result: GenerateJobResult = {
       title: `${subject} ${grade} ${unit} (${difficulty})`,
@@ -107,6 +117,7 @@ export async function POST(request: NextRequest) {
       difficulty,
       problems: formattedContent.problems
     };
+    console.log('Generate start - result object created');
 
     try {
       if (process.env.GOOGLE_PROJECT_ID && process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
@@ -122,13 +133,16 @@ export async function POST(request: NextRequest) {
       result.documentUrl = undefined;
     }
 
+    console.log('Generate start - returning successful response');
     return NextResponse.json({
       status: 'completed',
       result,
       progress: 100
     });
   } catch (error) {
-    console.error('Generate start error:', error);
+    console.error('Generate start error - detailed:', error);
+    console.error('Generate start error - stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Generate start error - message:', error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

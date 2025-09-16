@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
       }
     } catch (error) {
       console.error('Google Workspace integration error:', error);
+      result.spreadsheetUrl = undefined;
+      result.documentUrl = undefined;
     }
 
     return NextResponse.json({

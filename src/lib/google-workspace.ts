@@ -1,8 +1,9 @@
 import { google } from 'googleapis';
+import type { GoogleAuth } from 'google-auth-library';
 import { GenerateJobResult } from './queue';
 
 export class GoogleWorkspaceIntegration {
-  private auth: any;
+  private auth: GoogleAuth;
   
   constructor() {
     this.auth = new google.auth.GoogleAuth({

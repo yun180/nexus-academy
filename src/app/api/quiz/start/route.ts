@@ -117,9 +117,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { level, subject, grade, unit, questionCount } = await request.json();
+    const requestBody = await request.json();
+    console.log('Quiz start - received request body:', JSON.stringify(requestBody, null, 2));
+    
+    const { level, subject, grade, unit, questionCount } = requestBody;
+    console.log('Quiz start - extracted fields:', { level, subject, grade, unit, questionCount });
 
     if (!level || !subject || !questionCount) {
+      console.log('Quiz start - validation failed:', { 
+        levelMissing: !level, 
+        subjectMissing: !subject, 
+        questionCountMissing: !questionCount 
+      });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 

@@ -193,12 +193,21 @@ export class GeminiProvider implements AIProvider {
   constructor() {
     const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.nexus_api_key;
     console.log('GeminiProvider - Initializing with API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'None');
+    console.log('GeminiProvider - Environment NODE_ENV:', process.env.NODE_ENV);
+    console.log('GeminiProvider - Full API key length:', apiKey ? apiKey.length : 0);
     
     if (!apiKey || apiKey === 'a') {
+      console.error('GeminiProvider - API key validation failed:', { apiKey: apiKey ? 'present' : 'missing', length: apiKey ? apiKey.length : 0 });
       throw new Error('Invalid or missing Gemini API key');
     }
     
-    this.genai = new GoogleGenerativeAI(apiKey);
+    try {
+      this.genai = new GoogleGenerativeAI(apiKey);
+      console.log('GeminiProvider - GoogleGenerativeAI instance created successfully');
+    } catch (error) {
+      console.error('GeminiProvider - Failed to create GoogleGenerativeAI instance:', error);
+      throw error;
+    }
   }
   
   async generateContent(prompt: string, systemPrompt: string): Promise<string> {
@@ -233,20 +242,55 @@ export class GeminiProvider implements AIProvider {
   }
 
   async generateQuizContent(subject: string, grade: string, unit: string, difficulty: string, questionCount: number): Promise<string> {
-    const model = this.genai.getGenerativeModel({ 
-      model: 'gemini-2.0-flash',
-      generationConfig: {
-        maxOutputTokens: 3000,
-        temperature: 0.7,
+    try {
+      console.log('GeminiProvider - generateQuizContent called with params:', { subject, grade, unit, difficulty, questionCount });
+      
+      const model = this.genai.getGenerativeModel({ 
+        model: 'gemini-2.0-flash',
+        generationConfig: {
+          maxOutputTokens: 3000,
+          temperature: 0.7,
+        }
+      });
+      console.log('GeminiProvider - Model obtained successfully');
+      
+      const systemPrompt = this.createQuizGenerationPrompt(subject, grade, unit, difficulty);
+      console.log('GeminiProvider - System prompt created, length:', systemPrompt.length);
+      
+      const userPrompt = `${subject}の${unit}について、${difficulty}レベルの選択問題を${questionCount}問作成してください。`;
+      console.log('GeminiProvider - User prompt created:', userPrompt);
+      
+      const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+      console.log('GeminiProvider - Full prompt created, total length:', fullPrompt.length);
+      console.log('GeminiProvider - Full prompt preview:', fullPrompt.substring(0, 300) + '...');
+      
+      console.log('GeminiProvider - Calling model.generateContent...');
+      const result = await model.generateContent(fullPrompt);
+      console.log('GeminiProvider - generateContent completed successfully');
+      
+      const responseText = result.response.text();
+      console.log('GeminiProvider - Response text extracted, length:', responseText.length);
+      console.log('GeminiProvider - Response preview:', responseText.substring(0, 200) + '...');
+      
+      return responseText;
+    } catch (error) {
+      console.error('GeminiProvider - generateQuizContent failed with error:', error);
+      console.error('GeminiProvider - Error type:', typeof error);
+      console.error('GeminiProvider - Error message:', error instanceof Error ? error.message : String(error));
+      console.error('GeminiProvider - Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      if (error && typeof error === 'object') {
+        console.error('GeminiProvider - Error details:', JSON.stringify(error, null, 2));
+        if ('status' in error) {
+          console.error('GeminiProvider - HTTP status:', (error as any).status);
+        }
+        if ('code' in error) {
+          console.error('GeminiProvider - Error code:', (error as any).code);
+        }
       }
-    });
-    
-    const systemPrompt = this.createQuizGenerationPrompt(subject, grade, unit, difficulty);
-    const userPrompt = `${subject}の${unit}について、${difficulty}レベルの選択問題を${questionCount}問作成してください。`;
-    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
-    
-    const result = await model.generateContent(fullPrompt);
-    return result.response.text();
+      
+      throw error;
+    }
   }
 
   private createMaterialGenerationPrompt(subject: string, grade: string, unit: string, difficulty: string): string {

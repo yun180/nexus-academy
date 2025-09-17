@@ -282,10 +282,10 @@ export class GeminiProvider implements AIProvider {
       if (error && typeof error === 'object') {
         console.error('GeminiProvider - Error details:', JSON.stringify(error, null, 2));
         if ('status' in error) {
-          console.error('GeminiProvider - HTTP status:', (error as any).status);
+          console.error('GeminiProvider - HTTP status:', (error as Record<string, unknown>).status);
         }
         if ('code' in error) {
-          console.error('GeminiProvider - Error code:', (error as any).code);
+          console.error('GeminiProvider - Error code:', (error as Record<string, unknown>).code);
         }
       }
       

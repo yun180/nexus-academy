@@ -155,11 +155,20 @@ export async function POST(request: NextRequest) {
     let questions;
     
     try {
+      console.log('Quiz generation - getting AI provider');
       const aiProvider = getAIProvider();
+      console.log('Quiz generation - AI provider obtained, calling generateQuizContent');
+      console.log('Quiz generation - params:', { subject, grade, unit, level, questionCount });
+      
       const response = await aiProvider.generateQuizContent(subject, grade || '中学1年', unit || '基本', level, questionCount);
+      console.log('Quiz generation - AI response received, length:', response.length);
+      console.log('Quiz generation - AI response preview:', response.substring(0, 200));
       
       const parsedContent = parseQuizContent(response);
+      console.log('Quiz generation - parsed questions count:', parsedContent.questions.length);
+      
       const formattedContent = formatMathResponse(parsedContent);
+      console.log('Quiz generation - formatted questions count:', formattedContent.questions.length);
       
       questions = formattedContent.questions.map((q, index) => ({
         id: index + 1,
@@ -170,10 +179,14 @@ export async function POST(request: NextRequest) {
       }));
       
       if (questions.length === 0) {
-        throw new Error('No questions generated');
+        throw new Error('No questions generated - parsing failed');
       }
+      console.log('Quiz generation - success, generated', questions.length, 'questions');
     } catch (error) {
-      console.error('AI generation failed, using fallback questions:', error);
+      console.error('AI generation failed - detailed error:', error);
+      console.error('AI generation failed - error message:', error instanceof Error ? error.message : String(error));
+      console.error('AI generation failed - error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
       questions = Array.from({ length: questionCount }, (_, index) => ({
         id: index + 1,
         question: `${subject}の${level}レベル問題 ${index + 1}`,

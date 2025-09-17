@@ -192,7 +192,13 @@ export class GeminiProvider implements AIProvider {
   
   constructor() {
     const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.nexus_api_key;
-    this.genai = new GoogleGenerativeAI(apiKey!);
+    console.log('GeminiProvider - Initializing with API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'None');
+    
+    if (!apiKey || apiKey === 'a') {
+      throw new Error('Invalid or missing Gemini API key');
+    }
+    
+    this.genai = new GoogleGenerativeAI(apiKey);
   }
   
   async generateContent(prompt: string, systemPrompt: string): Promise<string> {
@@ -368,12 +374,24 @@ D. [選択肢D]
 }
 
 export function getAIProvider(): AIProvider {
-  const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.nexus_api_key;
+  const googleApiKey = process.env.GOOGLE_AI_API_KEY;
+  const nexusApiKey = process.env.nexus_api_key;
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  
+  console.log('AI Provider - Environment check:');
+  console.log('- GOOGLE_AI_API_KEY:', googleApiKey ? `Set (${googleApiKey.substring(0, 10)}...)` : 'Not set');
+  console.log('- nexus_api_key:', nexusApiKey ? `Set (${nexusApiKey.substring(0, 10)}...)` : 'Not set');
+  console.log('- OPENAI_API_KEY:', openaiApiKey ? 'Set' : 'Not set');
+  
+  const apiKey = googleApiKey || nexusApiKey;
   if (apiKey && apiKey !== 'a') {
+    console.log('AI Provider - Using GeminiProvider with key:', apiKey.substring(0, 10) + '...');
     return new GeminiProvider();
-  } else if (process.env.OPENAI_API_KEY) {
+  } else if (openaiApiKey) {
+    console.log('AI Provider - Using OpenAIProvider');
     return new OpenAIProvider();
   } else {
+    console.error('AI Provider - No valid API key found');
     throw new Error('No valid AI API key found. Please configure GOOGLE_AI_API_KEY, nexus_api_key, or OPENAI_API_KEY.');
   }
 }

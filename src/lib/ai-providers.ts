@@ -5,6 +5,7 @@ export interface AIProvider {
   generateContent(prompt: string, systemPrompt: string): Promise<string>;
   generateMaterialContent(subject: string, grade: string, unit: string, difficulty: string): Promise<string>;
   generateQuizContent(subject: string, grade: string, unit: string, difficulty: string, questionCount: number): Promise<string>;
+  generateMaterialRecommendations(learningHistory: Array<{subject: string; avg_score: number; weak_areas: Record<string, unknown>; difficulty: string}>): Promise<Array<{id: string; title: string; subject: string; difficulty: string; description: string; url: string; reason: string}>>;
 }
 
 export class OpenAIProvider implements AIProvider {
@@ -61,6 +62,24 @@ export class OpenAIProvider implements AIProvider {
     });
     
     return completion.choices[0]?.message?.content || '';
+  }
+
+  async generateMaterialRecommendations(learningHistory: Array<{subject: string; avg_score: number; weak_areas: Record<string, unknown>; difficulty: string}>): Promise<Array<{id: string; title: string; subject: string; difficulty: string; description: string; url: string; reason: string}>> {
+    const systemPrompt = this.createRecommendationPrompt(learningHistory);
+    const userPrompt = "学習履歴を分析して、最適な教材を6つ推薦してください。";
+    
+    const completion = await this.openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      max_tokens: 2000,
+      temperature: 0.7,
+    });
+    
+    const response = completion.choices[0]?.message?.content || '';
+    return this.parseRecommendations(response);
   }
 
   private createMaterialGenerationPrompt(subject: string, grade: string, unit: string, difficulty: string): string {
@@ -185,6 +204,86 @@ D. [選択肢D]
     
     return basePrompt + formatInstructions;
   }
+
+  private createRecommendationPrompt(learningHistory: Array<{subject: string; avg_score: number; weak_areas: Record<string, unknown>; difficulty: string}>): string {
+    const historyAnalysis = learningHistory.length > 0 
+      ? `学習履歴分析：\n${learningHistory.map(h => `- ${h.subject}: 平均点${Math.round(h.avg_score)}点, 難易度${h.difficulty}, 苦手分野: ${JSON.stringify(h.weak_areas)}`).join('\n')}`
+      : '学習履歴：なし（初回利用者）';
+
+    return `あなたは教育専門のAIアシスタントです。学習者の履歴を分析して、最適な教材を推薦してください。
+
+${historyAnalysis}
+
+以下の形式でJSONとして6つの教材推薦を出力してください：
+
+[
+  {
+    "id": "rec_1",
+    "title": "具体的な教材タイトル",
+    "subject": "数学",
+    "difficulty": "基礎",
+    "description": "この教材の詳細説明（50文字程度）",
+    "url": "/generator?subject=数学&grade=中学生&unit=方程式&difficulty=基礎",
+    "reason": "推薦理由（学習履歴に基づく具体的な理由）"
+  }
+]
+
+**重要な指示**：
+1. URLは必ず "/generator?subject=科目&grade=学年&unit=単元&difficulty=難易度" の形式にしてください
+2. 学習履歴がある場合は、苦手分野や低得点科目を重点的に推薦してください
+3. 学習履歴がない場合は、基礎的な内容から始められる教材を推薦してください
+4. 各推薦の理由は学習データに基づいて具体的に記述してください
+5. 難易度は「基礎」「標準」「応用」のいずれかを使用してください
+6. 科目は「数学」「英語」「国語」「理科」「社会」から選択してください`;
+  }
+
+  private parseRecommendations(aiResponse: string): Array<{id: string; title: string; subject: string; difficulty: string; description: string; url: string; reason: string}> {
+    try {
+      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        throw new Error('No JSON array found in response');
+      }
+      
+      const recommendations = JSON.parse(jsonMatch[0]);
+      
+      return recommendations.map((rec: Record<string, unknown>, index: number) => ({
+        id: rec.id || `rec_${index + 1}`,
+        title: rec.title || `推薦教材${index + 1}`,
+        subject: rec.subject || '数学',
+        difficulty: rec.difficulty || '基礎',
+        description: rec.description || '学習に役立つ教材です。',
+        url: rec.url || '/generator',
+        reason: rec.reason || '学習の向上に役立ちます。'
+      }));
+    } catch (error) {
+      console.error('Failed to parse AI recommendations:', error);
+      return this.getFallbackRecommendations();
+    }
+  }
+
+  private getFallbackRecommendations(): Array<{id: string; title: string; subject: string; difficulty: string; description: string; url: string; reason: string}> {
+    return [
+      {
+        id: 'fallback_1',
+        title: '基礎数学ドリル',
+        subject: '数学',
+        difficulty: '基礎',
+        description: '数学の基本的な計算問題を集めた教材です。',
+        url: '/generator?subject=数学&grade=中学生&unit=計算&difficulty=基礎',
+        reason: 'AI分析に基づく推薦が利用できないため、基礎から始めることをお勧めします。'
+      },
+      {
+        id: 'fallback_2',
+        title: '英語基礎文法',
+        subject: '英語',
+        difficulty: '基礎',
+        description: '英語の基本文法を学習できる教材です。',
+        url: '/generator?subject=英語&grade=中学生&unit=文法&difficulty=基礎',
+        reason: 'AI分析に基づく推薦が利用できないため、基礎から始めることをお勧めします。'
+      }
+    ];
+  }
+
 }
 
 export class GeminiProvider implements AIProvider {
@@ -239,6 +338,23 @@ export class GeminiProvider implements AIProvider {
     
     const result = await model.generateContent(fullPrompt);
     return result.response.text();
+  }
+
+  async generateMaterialRecommendations(learningHistory: Array<{subject: string; avg_score: number; weak_areas: Record<string, unknown>; difficulty: string}>): Promise<Array<{id: string; title: string; subject: string; difficulty: string; description: string; url: string; reason: string}>> {
+    const model = this.genai.getGenerativeModel({ 
+      model: 'gemini-2.0-flash',
+      generationConfig: {
+        maxOutputTokens: 2000,
+        temperature: 0.7,
+      }
+    });
+    
+    const systemPrompt = this.createRecommendationPrompt(learningHistory);
+    const userPrompt = "学習履歴を分析して、最適な教材を6つ推薦してください。";
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+    
+    const result = await model.generateContent(fullPrompt);
+    return this.parseRecommendations(result.response.text());
   }
 
   async generateQuizContent(subject: string, grade: string, unit: string, difficulty: string, questionCount: number): Promise<string> {
@@ -415,6 +531,86 @@ D. [選択肢D]
     
     return basePrompt + formatInstructions;
   }
+
+  private createRecommendationPrompt(learningHistory: Array<{subject: string; avg_score: number; weak_areas: Record<string, unknown>; difficulty: string}>): string {
+    const historyAnalysis = learningHistory.length > 0 
+      ? `学習履歴分析：\n${learningHistory.map(h => `- ${h.subject}: 平均点${Math.round(h.avg_score)}点, 難易度${h.difficulty}, 苦手分野: ${JSON.stringify(h.weak_areas)}`).join('\n')}`
+      : '学習履歴：なし（初回利用者）';
+
+    return `あなたは教育専門のAIアシスタントです。学習者の履歴を分析して、最適な教材を推薦してください。
+
+${historyAnalysis}
+
+以下の形式でJSONとして6つの教材推薦を出力してください：
+
+[
+  {
+    "id": "rec_1",
+    "title": "具体的な教材タイトル",
+    "subject": "数学",
+    "difficulty": "基礎",
+    "description": "この教材の詳細説明（50文字程度）",
+    "url": "/generator?subject=数学&grade=中学生&unit=方程式&difficulty=基礎",
+    "reason": "推薦理由（学習履歴に基づく具体的な理由）"
+  }
+]
+
+**重要な指示**：
+1. URLは必ず "/generator?subject=科目&grade=学年&unit=単元&difficulty=難易度" の形式にしてください
+2. 学習履歴がある場合は、苦手分野や低得点科目を重点的に推薦してください
+3. 学習履歴がない場合は、基礎的な内容から始められる教材を推薦してください
+4. 各推薦の理由は学習データに基づいて具体的に記述してください
+5. 難易度は「基礎」「標準」「応用」のいずれかを使用してください
+6. 科目は「数学」「英語」「国語」「理科」「社会」から選択してください`;
+  }
+
+  private parseRecommendations(aiResponse: string): Array<{id: string; title: string; subject: string; difficulty: string; description: string; url: string; reason: string}> {
+    try {
+      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        throw new Error('No JSON array found in response');
+      }
+      
+      const recommendations = JSON.parse(jsonMatch[0]);
+      
+      return recommendations.map((rec: Record<string, unknown>, index: number) => ({
+        id: rec.id || `rec_${index + 1}`,
+        title: rec.title || `推薦教材${index + 1}`,
+        subject: rec.subject || '数学',
+        difficulty: rec.difficulty || '基礎',
+        description: rec.description || '学習に役立つ教材です。',
+        url: rec.url || '/generator',
+        reason: rec.reason || '学習の向上に役立ちます。'
+      }));
+    } catch (error) {
+      console.error('Failed to parse AI recommendations:', error);
+      return this.getFallbackRecommendations();
+    }
+  }
+
+  private getFallbackRecommendations(): Array<{id: string; title: string; subject: string; difficulty: string; description: string; url: string; reason: string}> {
+    return [
+      {
+        id: 'fallback_1',
+        title: '基礎数学ドリル',
+        subject: '数学',
+        difficulty: '基礎',
+        description: '数学の基本的な計算問題を集めた教材です。',
+        url: '/generator?subject=数学&grade=中学生&unit=計算&difficulty=基礎',
+        reason: 'AI分析に基づく推薦が利用できないため、基礎から始めることをお勧めします。'
+      },
+      {
+        id: 'fallback_2',
+        title: '英語基礎文法',
+        subject: '英語',
+        difficulty: '基礎',
+        description: '英語の基本文法を学習できる教材です。',
+        url: '/generator?subject=英語&grade=中学生&unit=文法&difficulty=基礎',
+        reason: 'AI分析に基づく推薦が利用できないため、基礎から始めることをお勧めします。'
+      }
+    ];
+  }
+
 }
 
 export function getAIProvider(): AIProvider {

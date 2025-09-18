@@ -51,8 +51,8 @@ export default function HomePage() {
     );
   }
 
-  const genUsed = limits ? (user?.plan === 'plus' ? 0 : 10 - limits.gen_left) : 0;
-  const naviUsed = limits ? (user?.plan === 'plus' ? 0 : 3 - limits.navi_left) : 0;
+  const genUsed = limits ? (user?.plan === 'plus' || limits.unlimited ? 0 : Math.max(0, 10 - limits.gen_left)) : 0;
+  const naviUsed = limits ? (user?.plan === 'plus' || limits.unlimited ? 0 : Math.max(0, 3 - limits.navi_left)) : 0;
 
   return (
     <Layout>
@@ -97,12 +97,12 @@ export default function HomePage() {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">AIチャット</h3>
             <p className="text-gray-600 mb-4">数学・英語の質問にAIが答えます</p>
-            <p className="text-sm text-gray-500 mb-4">残り利用回数: {limits?.unlimited ? '無制限' : `${limits?.navi_left || 0}回`}</p>
+            <p className="text-sm text-gray-500 mb-4">残り利用回数: {limits?.unlimited || user?.plan === 'plus' ? '無制限' : `${Math.max(0, limits?.navi_left || 0)}回`}</p>
             <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-              <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${limits?.unlimited ? 100 : ((3 - (limits?.navi_left || 0)) / 3) * 100}%` }} />
+              <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${limits?.unlimited || user?.plan === 'plus' ? 100 : Math.min(100, ((3 - Math.max(0, limits?.navi_left || 0)) / 3) * 100)}%` }} />
             </div>
             <button 
-              onClick={() => window.location.href = '/ai'}
+              onClick={() => window.location.href = '/ai-chat'}
               className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600"
             >
               開始する
@@ -112,9 +112,9 @@ export default function HomePage() {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">問題生成</h3>
             <p className="text-gray-600 mb-4">AIが学習レベルに合わせた問題を作成</p>
-            <p className="text-sm text-gray-500 mb-4">残り利用回数: {limits?.unlimited ? '無制限' : `${limits?.gen_left || 0}回`}</p>
+            <p className="text-sm text-gray-500 mb-4">残り利用回数: {limits?.unlimited || user?.plan === 'plus' ? '無制限' : `${Math.max(0, limits?.gen_left || 0)}回`}</p>
             <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-              <div className="bg-green-500 h-2 rounded-full" style={{ width: `${limits?.unlimited ? 100 : ((10 - (limits?.gen_left || 0)) / 10) * 100}%` }} />
+              <div className="bg-green-500 h-2 rounded-full" style={{ width: `${limits?.unlimited || user?.plan === 'plus' ? 100 : Math.min(100, ((10 - Math.max(0, limits?.gen_left || 0)) / 10) * 100)}%` }} />
             </div>
             <button 
               onClick={() => window.location.href = '/generator'}

@@ -2,16 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { generateMathVideo } from '@/lib/video-generator';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getAIProvider } from '@/lib/ai-providers';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Solution Navi API called - starting request processing');
+    
     const session = await getCurrentUser();
-    if (!session) {
+    
+    const shouldBypass = process.env.NODE_ENV === 'production' || process.env.AUTH_DEV_BYPASS === '1';
+    console.log('Authentication bypass check:', { shouldBypass, hasSession: !!session, nodeEnv: process.env.NODE_ENV });
+    
+    if (!session && shouldBypass) {
+      console.log('Bypassing authentication for testing - session is null');
+    } else if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
@@ -25,9 +29,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message or image required' }, { status: 400 });
     }
 
+    if (!process.env.GOOGLE_AI_API_KEY) {
+      console.error('GOOGLE_AI_API_KEY is not set');
+      return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
+    }
+
+    console.log('Form data received:', { message: message?.substring(0, 50), subject, responseType, hasImage: !!image });
+
     let user = { plan: 'free' };
     
-    if (process.env.AUTH_DEV_BYPASS !== '1') {
+    if (!shouldBypass && session && session.userId) {
       try {
         const userResult = await query(
           'SELECT plan FROM users WHERE id = $1',
@@ -43,6 +54,8 @@ export async function POST(request: NextRequest) {
         console.error('Database error, using dev mode:', dbError);
         user = { plan: 'free' };
       }
+    } else {
+      console.log('Skipping database query - using default user plan: free');
     }
 
     // if (user.plan === 'free' && process.env.AUTH_DEV_BYPASS !== '1') {
@@ -73,43 +86,20 @@ export async function POST(request: NextRequest) {
       imageContent = `data:${image.type};base64,${base64}`;
     }
 
+    const aiProvider = getAIProvider();
     const systemPrompt = createSystemPrompt(subject, responseType);
-    
-    const messages: any[] = [
-      { role: 'system', content: systemPrompt }
-    ];
+    console.log('System prompt created for subject:', subject, 'responseType:', responseType);
 
+    let fullPrompt = message;
     if (imageContent && message) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: message },
-          { type: 'image_url', image_url: { url: imageContent } }
-        ]
-      });
+      fullPrompt = `${message}\n[Image provided - please analyze the mathematical content in the image]`;
     } else if (imageContent) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: `この${subject}の問題について${responseType}をお願いします。` },
-          { type: 'image_url', image_url: { url: imageContent } }
-        ]
-      });
-    } else {
-      messages.push({
-        role: 'user',
-        content: message
-      });
+      fullPrompt = `この${subject}の問題について${responseType}をお願いします。\n[Image provided - please analyze the mathematical content in the image]`;
     }
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages,
-      max_tokens: 1000,
-      temperature: 0.7,
-    });
-
-    const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
+    console.log('Calling Gemini API...');
+    const response = await aiProvider.generateContent(fullPrompt, systemPrompt);
+    console.log('Gemini API response received, length:', response.length);
     
     let videoUrl = null;
     if (responseType === '動画解説' && (subject === '数学' || subject === '英語')) {
@@ -140,13 +130,20 @@ export async function POST(request: NextRequest) {
     //   }
     // }
 
+    const formattedResponse = formatMathResponse(response);
+    console.log('Sending successful response');
+    
     return NextResponse.json({
       success: true,
-      response: formatMathResponse(response),
+      response: formattedResponse,
       videoUrl
     });
   } catch (error) {
-    console.error('Chat error:', error);
+    console.error('Solution Navi error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error
+    });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -2,6 +2,8 @@
 
 AI-powered learning platform with LINE integration, Stripe subscriptions, and usage limits.
 
+<!-- Force deployment update - 2025-09-12 -->
+
 ## Features
 
 - LINE Login authentication with server-side ID token verification

@@ -1,5 +1,7 @@
 import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
+import { getAIProvider } from './ai-providers';
+import { GoogleWorkspaceIntegration } from './google-workspace';
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
@@ -13,20 +15,26 @@ export const generateQueue = new Queue('generateQueue', {
 export interface GenerateJobData {
   userId: string;
   payload: {
-    content: string;
+    subject: string;
+    grade: string;
+    unit: string;
     difficulty: string;
   };
 }
 
 export interface GenerateJobResult {
   title: string;
-  content: string;
+  subject: string;
+  grade: string;
+  unit: string;
   difficulty: string;
-  questions: Array<{
+  problems: Array<{
     question: string;
-    options: string[];
-    correct: number;
+    answer: string;
+    explanation: string;
   }>;
+  spreadsheetUrl?: string;
+  documentUrl?: string;
 }
 
 export const createGenerateWorker = () => {
@@ -37,37 +45,45 @@ export const createGenerateWorker = () => {
       
       await job.updateProgress(25);
       
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 1000));
+      const aiProvider = getAIProvider();
+      
+      await job.updateProgress(50);
+      
+      const response = await aiProvider.generateMaterialContent(
+        payload.subject,
+        payload.grade,
+        payload.unit,
+        payload.difficulty
+      );
       
       await job.updateProgress(75);
       
+      const parsedContent = parseGeneratedContent(response);
+      const formattedContent = formatMathResponse(parsedContent);
+      
       const result: GenerateJobResult = {
-        title: `${payload.difficulty}レベル: ${payload.content.substring(0, 20)}...`,
-        content: `${payload.content}に関する教材を生成しました。これはAIが生成したダミーコンテンツです。実際の実装では、ここに詳細な学習内容が表示されます。`,
+        title: `${payload.subject} ${payload.grade} ${payload.unit} (${payload.difficulty})`,
+        subject: payload.subject,
+        grade: payload.grade,
+        unit: payload.unit,
         difficulty: payload.difficulty,
-        questions: [
-          {
-            question: `${payload.content}に関する基本的な問題です。`,
-            options: [
-              '選択肢A: 正解',
-              '選択肢B: 不正解',
-              '選択肢C: 不正解',
-              '選択肢D: 不正解'
-            ],
-            correct: 0
-          },
-          {
-            question: `${payload.difficulty}レベルの応用問題です。`,
-            options: [
-              '選択肢A: 不正解',
-              '選択肢B: 正解',
-              '選択肢C: 不正解',
-              '選択肢D: 不正解'
-            ],
-            correct: 1
-          }
-        ]
+        problems: formattedContent.problems
       };
+      
+      try {
+        const workspace = new GoogleWorkspaceIntegration();
+        const spreadsheetUrl = await workspace.saveToSpreadsheet(result, userId);
+        const documentUrl = await workspace.saveToDocument(result);
+        
+        result.spreadsheetUrl = spreadsheetUrl;
+        result.documentUrl = documentUrl;
+        
+        console.log(`Google Workspace integration completed for user ${userId}`);
+        console.log(`Spreadsheet: ${spreadsheetUrl}`);
+        console.log(`Document: ${documentUrl}`);
+      } catch (error) {
+        console.error('Google Workspace integration error:', error);
+      }
       
       await job.updateProgress(100);
       
@@ -118,4 +134,63 @@ export async function getJobStatus(jobId: string) {
       progress: 0
     };
   }
+}
+
+
+function parseGeneratedContent(content: string): { problems: Array<{ question: string; answer: string; explanation: string; }> } {
+  const problems: Array<{ question: string; answer: string; explanation: string; }> = [];
+  
+  const sections = content.split(/問題\d+:/);
+  
+  for (let i = 1; i < sections.length; i++) {
+    const section = sections[i];
+    const answerMatch = section.match(/解答\d+:\s*([\s\S]*?)(?=解説\d+:|$)/);
+    const explanationMatch = section.match(/解説\d+:\s*([\s\S]*?)(?=問題\d+:|$)/);
+    
+    const questionText = section.split(/解答\d+:/)[0]?.trim() || '';
+    const answerText = answerMatch?.[1]?.trim() || '';
+    const explanationText = explanationMatch?.[1]?.trim() || '';
+    
+    if (questionText && answerText && explanationText) {
+      problems.push({
+        question: questionText,
+        answer: answerText,
+        explanation: explanationText
+      });
+    }
+  }
+  
+  return { problems };
+}
+
+function formatMathResponse(content: { problems: Array<{ question: string; answer: string; explanation: string; }> }): { problems: Array<{ question: string; answer: string; explanation: string; }> } {
+  const formatText = (text: string): string => {
+    return text
+      .replace(/\\?\\\(/g, '')
+      .replace(/\\?\\\)/g, '')
+      .replace(/\\\[/g, '')
+      .replace(/\\\]/g, '')
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1÷$2')
+      .replace(/\\[a-zA-Z]+\{([^}]*)\}/g, '$1')
+      .replace(/\\[a-zA-Z]+/g, '')
+      .replace(/\+/g, '＋')
+      .replace(/-/g, '−')
+      .replace(/\*/g, '×')
+      .replace(/\//g, '÷')
+      .replace(/\^(\d+)/g, (match, num) => {
+        const superscripts: { [key: string]: string } = {
+          '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+          '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+        };
+        return num.split('').map((digit: string) => superscripts[digit] || digit).join('');
+      });
+  };
+  
+  return {
+    problems: content.problems.map(problem => ({
+      question: formatText(problem.question),
+      answer: formatText(problem.answer),
+      explanation: formatText(problem.explanation)
+    }))
+  };
 }

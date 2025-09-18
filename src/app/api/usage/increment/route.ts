@@ -17,21 +17,13 @@ export async function POST(request: NextRequest) {
 
     if (process.env.AUTH_DEV_BYPASS === '1') {
       const cookieStore = await cookies();
-      const sessionToken = cookieStore.get('session')?.value;
+      const sessionToken = cookieStore.get('auth_session')?.value;
       
       if (sessionToken) {
         try {
           const decoded = verify(sessionToken, process.env.LINE_CHANNEL_SECRET || 'dev-secret') as { userId: string; plan: string };
           if (decoded.userId === 'dev-user-id') {
-            if (decoded.plan === 'plus') {
-              return NextResponse.json({ success: true, unlimited: true });
-            } else {
-              return NextResponse.json({ 
-                success: true, 
-                new_count: 1,
-                remaining: (type === 'gen' ? GEN_MAX_PER_DAY : NAVI_MAX_PER_DAY) - 1
-              });
-            }
+            return NextResponse.json({ success: true, unlimited: true });
           }
         } catch (_error) {
         }
@@ -52,50 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const user = userResult.rows[0];
-    
-    if (user.plan === 'plus') {
-      return NextResponse.json({ success: true, unlimited: true });
-    }
-
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-    
-    const usageResult = await query(
-      'SELECT gen_count, navi_count FROM usage_logs WHERE user_id = $1 AND date = $2',
-      [session.userId, today]
-    );
-
-    const currentUsage = usageResult.rows[0] || { gen_count: 0, navi_count: 0 };
-    
-    const maxLimit = type === 'gen' ? GEN_MAX_PER_DAY : NAVI_MAX_PER_DAY;
-    const currentCount = type === 'gen' ? currentUsage.gen_count : currentUsage.navi_count;
-    
-    // if (currentCount >= maxLimit) {
-    //   return NextResponse.json({ 
-    //     error: `Daily limit exceeded. ${type === 'gen' ? 'Material generation' : 'Solution navigator'} limit is ${maxLimit} per day.`,
-    //     limit_exceeded: true,
-    //     current_count: currentCount,
-    //     max_limit: maxLimit
-    //   }, { status: 400 });
-    // }
-
-    if (usageResult.rows.length === 0) {
-      await query(
-        `INSERT INTO usage_logs (user_id, date, ${type}_count) VALUES ($1, $2, 1)`,
-        [session.userId, today]
-      );
-    } else {
-      await query(
-        `UPDATE usage_logs SET ${type}_count = ${type}_count + 1 WHERE user_id = $1 AND date = $2`,
-        [session.userId, today]
-      );
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      new_count: currentCount + 1,
-      remaining: maxLimit - (currentCount + 1)
-    });
+    return NextResponse.json({ success: true, unlimited: true });
   } catch (error) {
     console.error('Increment usage error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

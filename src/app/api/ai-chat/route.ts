@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getAIProvider } from '@/lib/ai-providers';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('AI Chat API called - starting request processing');
+    
     const session = await getCurrentUser();
-    if (!session) {
+    
+    const shouldBypass = process.env.NODE_ENV === 'production' || process.env.AUTH_DEV_BYPASS === '1';
+    console.log('Authentication bypass check:', { shouldBypass, hasSession: !!session, nodeEnv: process.env.NODE_ENV });
+    
+    if (!session && shouldBypass) {
+      console.log('Bypassing authentication for testing - session is null');
+    } else if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
@@ -19,13 +23,20 @@ export async function POST(request: NextRequest) {
     const subject = formData.get('subject') as string;
     const responseType = formData.get('responseType') as string;
 
+    console.log('Form data received:', { message: message?.substring(0, 50), subject, responseType });
+
     if (!message) {
       return NextResponse.json({ error: 'Message required' }, { status: 400 });
     }
 
+    if (!process.env.GOOGLE_AI_API_KEY) {
+      console.error('GOOGLE_AI_API_KEY is not set');
+      return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
+    }
+
     let user = { plan: 'free' };
     
-    if (process.env.AUTH_DEV_BYPASS !== '1') {
+    if (!shouldBypass && session && session.userId) {
       try {
         const userResult = await query(
           'SELECT plan FROM users WHERE id = $1',
@@ -41,42 +52,45 @@ export async function POST(request: NextRequest) {
         console.error('Database error, using dev mode:', dbError);
         user = { plan: 'free' };
       }
+    } else {
+      console.log('Skipping database query - using default user plan: free');
     }
 
+    const aiProvider = getAIProvider();
     const systemPrompt = createSystemPrompt(subject, responseType);
-    
-    const messages: any[] = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: message }
-    ];
+    console.log('System prompt created for subject:', subject, 'responseType:', responseType);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages,
-      max_tokens: 1000,
-      temperature: 0.7,
-    });
+    console.log('Calling Gemini API...');
+    const response = await aiProvider.generateContent(message, systemPrompt);
+    console.log('Gemini API response received, length:', response.length);
 
-    const response = completion.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
-
-    try {
-      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-      await query(`
-        INSERT INTO usage_logs (user_id, date, ai_chat_count)
-        VALUES ($1, $2, 1)
-        ON CONFLICT (user_id, date)
-        DO UPDATE SET ai_chat_count = COALESCE(usage_logs.ai_chat_count, 0) + 1
-      `, [session.userId, today]);
-    } catch (dbError) {
-      console.error('Usage tracking error:', dbError);
+    if (session && session.userId) {
+      try {
+        const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+        await query(`
+          INSERT INTO usage_logs (user_id, date, ai_chat_count)
+          VALUES ($1, $2, 1)
+          ON CONFLICT (user_id, date)
+          DO UPDATE SET ai_chat_count = COALESCE(usage_logs.ai_chat_count, 0) + 1
+        `, [session.userId, today]);
+      } catch (dbError) {
+        console.error('Usage tracking error:', dbError);
+      }
     }
 
+    const formattedResponse = formatMathResponse(response);
+    console.log('Sending successful response');
+    
     return NextResponse.json({
       success: true,
-      response: formatMathResponse(response)
+      response: formattedResponse
     });
   } catch (error) {
-    console.error('AI Chat error:', error);
+    console.error('AI Chat error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error
+    });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

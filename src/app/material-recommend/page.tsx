@@ -40,11 +40,6 @@ export default function MaterialRecommendPage() {
   }, []);
 
   const generateRecommendations = async () => {
-    if (user?.plan !== 'plus') {
-      setShowUpgradeModal(true);
-      return;
-    }
-
     setAnalyzing(true);
     try {
       const response = await fetch('/api/material-recommend', {
@@ -82,23 +77,6 @@ export default function MaterialRecommendPage() {
       <div className="max-w-6xl mx-auto space-y-8">
         <h1 className="text-2xl font-bold text-gray-900">教材レコメンド</h1>
         
-        {user?.plan !== 'plus' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">PLUS限定機能</h3>
-                <p className="mt-1 text-sm text-yellow-700">
-                  教材レコメンドはPLUS会員限定の機能です。学習履歴を分析して最適な教材を推薦します。
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">AI教材レコメンド</h2>
@@ -108,9 +86,9 @@ export default function MaterialRecommendPage() {
           
           <button
             onClick={generateRecommendations}
-            disabled={analyzing || user?.plan !== 'plus'}
+            disabled={analyzing}
             className={`py-3 px-6 rounded-md font-medium ${
-              analyzing || user?.plan !== 'plus'
+              analyzing
                 ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                 : 'bg-orange-600 text-white hover:bg-orange-700'
             }`}

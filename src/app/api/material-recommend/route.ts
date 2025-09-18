@@ -20,12 +20,6 @@ export async function POST(_request: NextRequest) {
     }
 
     const user = userResult.rows[0];
-    if (user.plan !== 'plus') {
-      return NextResponse.json({ 
-        error: 'Material recommendation requires PLUS subscription',
-        feature: 'material-recommend'
-      }, { status: 403 });
-    }
 
     const historyResult = await query(`
       SELECT subject, AVG(score) as avg_score, weak_areas, difficulty

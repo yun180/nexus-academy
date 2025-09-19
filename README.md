@@ -2,7 +2,7 @@
 
 AI-powered learning platform with LINE integration, Stripe subscriptions, and usage limits.
 
-<!-- Force deployment update - 2025-09-12 -->
+<!-- Force deployment update - 2025-09-18 08:55:41 UTC - Trigger deployment for restriction removal -->
 
 ## Features
 

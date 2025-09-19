@@ -49,7 +49,7 @@ export class GoogleWorkspaceIntegration {
     return `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
   }
   
-  async saveToDocument(result: GenerateJobResult, userId: string): Promise<string> {
+  async saveToDocument(result: GenerateJobResult): Promise<string> {
     const docs = google.docs({ version: 'v1', auth: this.auth });
     
     const doc = await docs.documents.create({

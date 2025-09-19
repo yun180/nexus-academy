@@ -8,6 +8,24 @@ import { pdf } from '@react-pdf/renderer';
 import PDFDocument from '@/components/PDFDocument';
 
 export default function GeneratorPage() {
+  const MATH_UNITS = {
+    '中学1年': ['正負の数', '文字と式', '一次方程式', '比例と反比例', '平面図形', '空間図形', 'データの活用'],
+    '中学2年': ['式の計算', '連立方程式', '一次関数', '図形の性質', '図形の証明', '確率'],
+    '中学3年': ['展開と因数分解', '平方根', '二次方程式', '二次関数', '相似', '三平方の定理', '標本調査'],
+    '高校1年': ['数と式', '集合と命題', '二次関数', '図形と計量', 'データの分析'],
+    '高校2年': ['式と証明', '複素数と方程式', '図形と方程式', '三角関数', '指数関数と対数関数'],
+    '高校3年': ['極限', '微分法', '積分法', '数列', 'ベクトル', '確率分布と統計的な推測']
+  };
+
+  const ENGLISH_UNITS = {
+    '中学1年': ['be動詞', '一般動詞', '疑問文', '否定文', '複数形', '代名詞'],
+    '中学2年': ['過去形', '未来形', '助動詞', '不定詞', '動名詞', '比較'],
+    '中学3年': ['現在完了', '受動態', '関係代名詞', '間接疑問文', '分詞'],
+    '高校1年': ['文型', '時制', '助動詞', '仮定法', '不定詞', '動名詞'],
+    '高校2年': ['分詞', '関係詞', '比較', '仮定法', '語法'],
+    '高校3年': ['長文読解', '英作文', '語彙', 'リスニング', '文法総合']
+  };
+
   const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAd, setShowAd] = useState(false);
@@ -63,11 +81,7 @@ export default function GeneratorPage() {
       return;
     }
 
-    if (user?.plan === 'free') {
-      setShowAd(true);
-    } else {
-      await startGeneration();
-    }
+    await startGeneration();
   };
 
   const handleAdComplete = async () => {
@@ -91,30 +105,18 @@ export default function GeneratorPage() {
         return;
       }
 
-      const { jobId } = await generateResponse.json();
+      const responseData = await generateResponse.json();
       
-      const checkStatus = async () => {
-        try {
-          const statusResponse = await fetch(`/api/generate/status?jobId=${jobId}`);
-          const statusData = await statusResponse.json();
-          
-          if (statusData.status === 'completed') {
-            setResult(statusData.result);
-            setGenerating(false);
-          } else {
-            setTimeout(checkStatus, 1000);
-          }
-        } catch (error) {
-          console.error('Status check error:', error);
-          setGenerating(false);
-        }
-      };
-
-      setTimeout(checkStatus, 2000);
+      if (responseData.status === 'completed') {
+        setResult(responseData.result);
+      } else {
+        alert('生成中にエラーが発生しました');
+      }
     } catch (error) {
       console.error('Generation error:', error);
-      setGenerating(false);
       alert('生成中にエラーが発生しました');
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -174,23 +176,6 @@ export default function GeneratorPage() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">AI教材生成</h2>
           
-          {user?.plan === 'free' && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">FREE版制限</h3>
-                  <div className="mt-2 text-yellow-700">
-                    <p>• 生成前に5秒の広告視聴が必要</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-6">
             <div>
@@ -265,22 +250,12 @@ export default function GeneratorPage() {
                 disabled={!grade}
               >
                 <option value="">単元を選択</option>
-                {subject === '数学' && grade && (
-                  <>
-                    <option value="方程式">方程式</option>
-                    <option value="関数">関数</option>
-                    <option value="図形">図形</option>
-                    <option value="確率">確率</option>
-                  </>
-                )}
-                {subject === '英語' && grade && (
-                  <>
-                    <option value="文法">文法</option>
-                    <option value="読解">読解</option>
-                    <option value="語彙">語彙</option>
-                    <option value="作文">作文</option>
-                  </>
-                )}
+                {subject === '数学' && grade && MATH_UNITS[grade as keyof typeof MATH_UNITS]?.map(unit => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+                {subject === '英語' && grade && ENGLISH_UNITS[grade as keyof typeof ENGLISH_UNITS]?.map(unit => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
               </select>
             </div>
 
@@ -312,9 +287,7 @@ export default function GeneratorPage() {
             >
               {generating 
                 ? '生成中...' 
-                : user?.plan === 'free' 
-                  ? '広告視聴後に生成開始' 
-                  : '教材生成開始'
+                : '教材生成開始'
               }
             </button>
           </div>

@@ -73,7 +73,7 @@ export const createGenerateWorker = () => {
       try {
         const workspace = new GoogleWorkspaceIntegration();
         const spreadsheetUrl = await workspace.saveToSpreadsheet(result, userId);
-        const documentUrl = await workspace.saveToDocument(result, userId);
+        const documentUrl = await workspace.saveToDocument(result);
         
         result.spreadsheetUrl = spreadsheetUrl;
         result.documentUrl = documentUrl;

@@ -58,7 +58,9 @@ export default function GoalPlannerPage() {
   const generateStudyPlan = (targetSchool: string, examDate: string, currentLevel: string, targetSubjects: string[]) => {
     const examDateTime = new Date(examDate).getTime();
     const currentDateTime = new Date().getTime();
-    const totalWeeks = Math.max(1, Math.ceil((examDateTime - currentDateTime) / (1000 * 60 * 60 * 24 * 7)));
+    const diffTime = examDateTime - currentDateTime;
+    
+    const totalWeeks = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7)));
     
     return {
       totalWeeks,

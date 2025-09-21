@@ -18,14 +18,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const user = userResult.rows[0];
-    if (user.plan !== 'plus') {
-      return NextResponse.json({ 
-        error: 'Goal Planner requires PLUS subscription',
-        feature: 'goal-planner'
-      }, { status: 403 });
-    }
-
     const { targetSchool, examDate, currentLevel, targetSubjects } = await request.json();
 
     if (!targetSchool || !examDate || !currentLevel || !targetSubjects) {

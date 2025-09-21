@@ -93,8 +93,7 @@ export default function AIPage() {
             <h3 className="text-lg font-semibold text-green-900 mb-2">ゴールプランナー</h3>
             <p className="text-green-700 mb-6">学習カレンダーを自動生成</p>
             <button
-              onClick={() => handleFeatureClick('goal-planner')}
-              disabled={false}
+              onClick={() => window.location.href = '/goal-planner'}
               className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-600 transition-colors"
             >
               開始する

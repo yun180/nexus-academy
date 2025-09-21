@@ -51,10 +51,6 @@ export default function GoalPlannerPage() {
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUser(userData);
-          
-          if (userData.plan !== 'plus') {
-            setShowUpgradeModal(true);
-          }
         }
 
         if (goalResponse.ok) {
@@ -83,11 +79,6 @@ export default function GoalPlannerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (user?.plan !== 'plus') {
-      setShowUpgradeModal(true);
-      return;
-    }
-
     if (formData.targetSubjects.length === 0) {
       alert('少なくとも1つの科目を選択してください');
       return;
@@ -130,24 +121,6 @@ export default function GoalPlannerPage() {
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
         <h1 className="text-2xl font-bold text-gray-900">ゴールプランナー</h1>
-        
-        {user?.plan !== 'plus' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">PLUS限定機能</h3>
-                <p className="mt-1 text-sm text-yellow-700">
-                  ゴールプランナーはPLUS会員限定の機能です。アップグレードして学習計画を自動生成しましょう。
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -217,9 +190,9 @@ export default function GoalPlannerPage() {
 
               <button
                 type="submit"
-                disabled={generating || user?.plan !== 'plus'}
+                disabled={generating}
                 className={`w-full py-3 px-4 rounded-md font-medium ${
-                  generating || user?.plan !== 'plus'
+                  generating
                     ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700'
                 }`}

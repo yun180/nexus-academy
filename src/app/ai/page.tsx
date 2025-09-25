@@ -5,7 +5,6 @@ import Layout from '@/components/Layout';
 import UpgradeModal from '@/components/UpgradeModal';
 
 export default function AIPage() {
-  const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -15,7 +14,6 @@ export default function AIPage() {
         const response = await fetch('/api/me');
         if (response.ok) {
           const userData = await response.json();
-          setUser(userData);
         }
       } catch (error) {
         console.error('Failed to fetch user:', error);

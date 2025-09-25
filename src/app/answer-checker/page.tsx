@@ -27,7 +27,6 @@ interface HistoryItem {
 }
 
 export default function AnswerCheckerPage() {
-  const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<CheckResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);

@@ -30,13 +30,15 @@ export default function AnswerCheckerPage() {
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<CheckResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [questionImagePreview, setQuestionImagePreview] = useState<string>('');
+  const [expectedAnswerImagePreview, setExpectedAnswerImagePreview] = useState<string>('');
+  const [handwrittenAnswerImagePreview, setHandwrittenAnswerImagePreview] = useState<string>('');
 
   const [formData, setFormData] = useState({
     subject: '数学',
-    questionText: '',
-    expectedAnswer: '',
-    image: null as File | null
+    questionImage: null as File | null,
+    expectedAnswerImage: null as File | null,
+    handwrittenAnswerImage: null as File | null
   });
 
   const subjects = ['数学', '英語', '国語', '理科', '社会'];
@@ -57,14 +59,22 @@ export default function AnswerCheckerPage() {
     fetchHistory();
   }, []);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (type: 'question' | 'expectedAnswer' | 'handwrittenAnswer') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData(prev => ({ ...prev, image: file }));
-      
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
+        const result = e.target?.result as string;
+        if (type === 'question') {
+          setFormData(prev => ({ ...prev, questionImage: file }));
+          setQuestionImagePreview(result);
+        } else if (type === 'expectedAnswer') {
+          setFormData(prev => ({ ...prev, expectedAnswerImage: file }));
+          setExpectedAnswerImagePreview(result);
+        } else if (type === 'handwrittenAnswer') {
+          setFormData(prev => ({ ...prev, handwrittenAnswerImage: file }));
+          setHandwrittenAnswerImagePreview(result);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -73,18 +83,20 @@ export default function AnswerCheckerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.image || !formData.expectedAnswer) {
-      alert('画像と模範解答を入力してください');
+    if (!formData.handwrittenAnswerImage || !formData.expectedAnswerImage) {
+      alert('手書き答案画像と模範解答画像をアップロードしてください');
       return;
     }
 
     setChecking(true);
     try {
       const submitData = new FormData();
-      submitData.append('image', formData.image);
-      submitData.append('expectedAnswer', formData.expectedAnswer);
+      submitData.append('handwrittenAnswerImage', formData.handwrittenAnswerImage);
+      submitData.append('expectedAnswerImage', formData.expectedAnswerImage);
       submitData.append('subject', formData.subject);
-      submitData.append('questionText', formData.questionText);
+      if (formData.questionImage) {
+        submitData.append('questionImage', formData.questionImage);
+      }
 
       const response = await fetch('/api/answer-checker', {
         method: 'POST',
@@ -115,11 +127,13 @@ export default function AnswerCheckerPage() {
   const resetForm = () => {
     setFormData({
       subject: '数学',
-      questionText: '',
-      expectedAnswer: '',
-      image: null
+      questionImage: null,
+      expectedAnswerImage: null,
+      handwrittenAnswerImage: null
     });
-    setImagePreview('');
+    setQuestionImagePreview('');
+    setExpectedAnswerImagePreview('');
+    setHandwrittenAnswerImagePreview('');
     setResult(null);
   };
 
@@ -151,29 +165,45 @@ export default function AnswerCheckerPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  問題文（任意）
+                  問題画像（任意）
                 </label>
-                <textarea
+                <input
+                  type="file"
+                  accept="image/*"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  rows={3}
-                  placeholder="問題文を入力してください"
-                  value={formData.questionText}
-                  onChange={(e) => setFormData(prev => ({ ...prev, questionText: e.target.value }))}
+                  onChange={handleImageChange('question')}
                 />
+                {questionImagePreview && (
+                  <div className="mt-4">
+                    <img
+                      src={questionImagePreview}
+                      alt="問題画像プレビュー"
+                      className="max-w-full h-48 object-contain border border-gray-200 rounded"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  模範解答
+                  模範解答画像
                 </label>
-                <textarea
+                <input
+                  type="file"
+                  accept="image/*"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  rows={4}
-                  placeholder="模範解答を入力してください"
-                  value={formData.expectedAnswer}
-                  onChange={(e) => setFormData(prev => ({ ...prev, expectedAnswer: e.target.value }))}
+                  onChange={handleImageChange('expectedAnswer')}
                   required
                 />
+                {expectedAnswerImagePreview && (
+                  <div className="mt-4">
+                    <img
+                      src={expectedAnswerImagePreview}
+                      alt="模範解答画像プレビュー"
+                      className="max-w-full h-48 object-contain border border-gray-200 rounded"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -184,14 +214,14 @@ export default function AnswerCheckerPage() {
                   type="file"
                   accept="image/*"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  onChange={handleImageChange}
+                  onChange={handleImageChange('handwrittenAnswer')}
                   required
                 />
-                {imagePreview && (
+                {handwrittenAnswerImagePreview && (
                   <div className="mt-4">
                     <img
-                      src={imagePreview}
-                      alt="答案プレビュー"
+                      src={handwrittenAnswerImagePreview}
+                      alt="手書き答案画像プレビュー"
                       className="max-w-full h-48 object-contain border border-gray-200 rounded"
                     />
                   </div>

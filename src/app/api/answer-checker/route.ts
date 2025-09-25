@@ -19,36 +19,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const user = userResult.rows[0];
-    if (user.plan !== 'plus') {
-      return NextResponse.json({ 
-        error: 'Answer Checker requires PLUS subscription',
-        feature: 'answer-checker'
-      }, { status: 403 });
-    }
 
     const formData = await request.formData();
-    const imageFile = formData.get('image') as File;
-    const expectedAnswer = formData.get('expectedAnswer') as string;
+    const handwrittenAnswerImage = formData.get('handwrittenAnswerImage') as File;
+    const expectedAnswerImage = formData.get('expectedAnswerImage') as File;
+    const questionImage = formData.get('questionImage') as File;
     const subject = formData.get('subject') as string;
-    const questionText = formData.get('questionText') as string;
 
-    if (!imageFile || !expectedAnswer || !subject) {
+    if (!handwrittenAnswerImage || !expectedAnswerImage || !subject) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
+    const handwrittenImageBuffer = Buffer.from(await handwrittenAnswerImage.arrayBuffer());
+    const handwrittenOcrResult = await extractTextFromImage(handwrittenImageBuffer);
 
-    const ocrResult = await extractTextFromImage(imageBuffer);
-
-    if (!ocrResult.text) {
+    if (!handwrittenOcrResult.text) {
       return NextResponse.json({ 
-        error: 'No text detected in image. Please ensure the image is clear and contains handwritten text.',
-        ocrResult
+        error: 'No text detected in handwritten answer image. Please ensure the image is clear and contains handwritten text.',
+        ocrResult: handwrittenOcrResult
       }, { status: 400 });
     }
 
-    const analysis = analyzeAnswer(ocrResult.text, expectedAnswer);
+    const expectedImageBuffer = Buffer.from(await expectedAnswerImage.arrayBuffer());
+    const expectedOcrResult = await extractTextFromImage(expectedImageBuffer);
+
+    if (!expectedOcrResult.text) {
+      return NextResponse.json({ 
+        error: 'No text detected in expected answer image. Please ensure the image is clear and contains text.',
+        ocrResult: expectedOcrResult
+      }, { status: 400 });
+    }
+
+    const analysis = analyzeAnswer(handwrittenOcrResult.text, expectedOcrResult.text);
+
+    let questionText = 'Answer Check';
+    if (questionImage) {
+      const questionImageBuffer = Buffer.from(await questionImage.arrayBuffer());
+      const questionOcrResult = await extractTextFromImage(questionImageBuffer);
+      questionText = questionOcrResult.text || 'Answer Check';
+    }
 
     const historyResult = await query(`
       INSERT INTO learning_history (user_id, subject, topic, score, max_score, weak_areas, quiz_type)
@@ -57,12 +66,14 @@ export async function POST(request: NextRequest) {
     `, [
       session.userId, 
       subject, 
-      questionText || 'Answer Check',
+      questionText,
       analysis.score,
       JSON.stringify({
         incorrectParts: analysis.incorrectParts,
-        extractedText: ocrResult.text,
-        confidence: ocrResult.confidence
+        handwrittenText: handwrittenOcrResult.text,
+        expectedText: expectedOcrResult.text,
+        handwrittenConfidence: handwrittenOcrResult.confidence,
+        expectedConfidence: expectedOcrResult.confidence
       })
     ]);
 
@@ -70,8 +81,12 @@ export async function POST(request: NextRequest) {
       success: true,
       checkId: historyResult.rows[0].id,
       ocrResult: {
-        text: ocrResult.text,
-        confidence: ocrResult.confidence
+        text: handwrittenOcrResult.text,
+        confidence: handwrittenOcrResult.confidence
+      },
+      expectedAnswerOcr: {
+        text: expectedOcrResult.text,
+        confidence: expectedOcrResult.confidence
       },
       analysis: {
         score: analysis.score,

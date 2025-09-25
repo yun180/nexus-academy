@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import UpgradeModal from '@/components/UpgradeModal';
 
 interface Goal {
   id: string;
@@ -22,12 +21,10 @@ interface Goal {
       description: string;
     }>;
   };
+  created_at: string;
 }
 
 export default function GoalPlannerPage() {
-  const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [formData, setFormData] = useState({
     targetSchool: '',
@@ -41,31 +38,49 @@ export default function GoalPlannerPage() {
   const levels = ['基礎', '標準', '応用'];
 
   useEffect(() => {
-    const fetchData = async () => {
+    const saved = localStorage.getItem('nexus-goal-planner');
+    if (saved) {
       try {
-        const [userResponse, goalResponse] = await Promise.all([
-          fetch('/api/me'),
-          fetch('/api/goal-planner')
-        ]);
-
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          setUser(userData);
-        }
-
-        if (goalResponse.ok) {
-          const goalData = await goalResponse.json();
-          setGoal(goalData.goal);
-        }
+        const parsedGoal = JSON.parse(saved);
+        setGoal(parsedGoal);
+        setFormData({
+          targetSchool: parsedGoal.target_school || '',
+          examDate: parsedGoal.exam_date || '',
+          currentLevel: parsedGoal.current_level || '基礎',
+          targetSubjects: parsedGoal.target_subjects || []
+        });
       } catch (error) {
-        console.error('Failed to fetch data:', error);
-      } finally {
-        setLoading(false);
+        console.error('Failed to load saved goal:', error);
       }
-    };
-
-    fetchData();
+    }
   }, []);
+
+  const generateStudyPlan = (targetSchool: string, examDate: string, currentLevel: string, targetSubjects: string[]) => {
+    const examDateTime = new Date(examDate).getTime();
+    const currentDateTime = new Date().getTime();
+    const diffTime = examDateTime - currentDateTime;
+    
+    const totalWeeks = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7)));
+    
+    return {
+      totalWeeks,
+      weeklySchedule: targetSubjects.map((subject: string) => ({
+        subject,
+        hoursPerWeek: currentLevel === '基礎' ? 8 : currentLevel === '標準' ? 10 : 12,
+        topics: [
+          `${subject}の基礎復習`,
+          `${subject}の応用問題`,
+          `${subject}の過去問演習`
+        ]
+      })),
+      milestones: [
+        { week: Math.ceil(totalWeeks * 0.25), description: '基礎固め完了' },
+        { week: Math.ceil(totalWeeks * 0.5), description: '応用力強化' },
+        { week: Math.ceil(totalWeeks * 0.75), description: '過去問対策' },
+        { week: totalWeeks, description: '最終調整・本番準備' }
+      ].filter(milestone => milestone.week <= totalWeeks)
+    };
+  };
 
   const handleSubjectToggle = (subject: string) => {
     setFormData(prev => ({
@@ -85,37 +100,31 @@ export default function GoalPlannerPage() {
     }
 
     setGenerating(true);
-    try {
-      const response = await fetch('/api/goal-planner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setGoal(data.goal);
-      } else {
-        const error = await response.json();
-        alert(error.error || '学習計画の生成に失敗しました');
-      }
-    } catch (error) {
-      console.error('Goal creation error:', error);
-      alert('エラーが発生しました');
-    } finally {
+    
+    setTimeout(() => {
+      const newStudyPlan = generateStudyPlan(
+        formData.targetSchool,
+        formData.examDate,
+        formData.currentLevel,
+        formData.targetSubjects
+      );
+      
+      const goalData: Goal = {
+        id: `goal-${Date.now()}`,
+        target_school: formData.targetSchool,
+        exam_date: formData.examDate,
+        current_level: formData.currentLevel,
+        target_subjects: formData.targetSubjects,
+        study_plan: newStudyPlan,
+        created_at: new Date().toISOString()
+      };
+      
+      localStorage.setItem('nexus-goal-planner', JSON.stringify(goalData));
+      
+      setGoal(goalData);
       setGenerating(false);
-    }
+    }, 2000);
   };
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
@@ -242,11 +251,6 @@ export default function GoalPlannerPage() {
         </div>
       </div>
 
-      <UpgradeModal 
-        isOpen={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)}
-        reason="feature_locked"
-      />
     </Layout>
   );
 }

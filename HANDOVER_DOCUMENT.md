@@ -22,7 +22,15 @@
   - `src/app/ai/page.tsx` - ナビゲーション時の制限チェックを除去
 - **結果:** 全ユーザーがゴールプランナー機能を利用可能
 
-### 3. ゴールプランナーのクライアントサイド化 ✅
+### 3. アンサーチェッカー機能の制限撤廃 ✅
+- **対象:** アンサーチェッカー機能のPLUS制限を完全に除去
+- **変更ファイル:**
+  - `src/app/answer-checker/page.tsx` - PLUS制限チェックと認証要求を除去
+  - `src/app/api/answer-checker/route.ts` - API側のPLUS制限チェックを除去
+  - `src/app/ai/page.tsx` - ナビゲーション時の制限チェックを除去、直接リンクに変更
+- **結果:** 全ユーザーがOCR採点機能を利用可能
+
+### 4. ゴールプランナーのクライアントサイド化 ✅
 - **目的:** LINE認証依存関係を完全に除去
 - **実装内容:**
   - 学習計画生成ロジックをAPIからフロントエンドに移行
@@ -42,11 +50,12 @@
 - **CI:** 全チェック通過
 - **本番反映:** 完了
 
-### PR #9: ゴールプランナー制限撤廃 + クライアントサイド化
+### PR #9: ゴールプランナー + アンサーチェッカー制限撤廃
 - **ステータス:** 🔄 オープン（レビュー待ち）
 - **URL:** https://github.com/yun180/nexus-academy/pull/9
 - **CI:** 全チェック通過
 - **ブランチ:** `devin/1758444991-deploy-merged-changes`
+- **内容:** ゴールプランナーのクライアントサイド化 + アンサーチェッカーのPLUS制限撤廃
 
 ## 📁 変更されたファイル一覧
 
@@ -57,6 +66,8 @@ src/app/material-recommend/page.tsx     - 教材レコメンドのPLUS制限除�
 src/app/api/material-recommend/route.ts - 教材レコメンドAPI制限除去
 src/app/goal-planner/page.tsx          - ゴールプランナーのPLUS制限除去
 src/app/api/goal-planner/route.ts      - ゴールプランナーAPI制限除去
+src/app/answer-checker/page.tsx        - アンサーチェッカーのPLUS制限除去
+src/app/api/answer-checker/route.ts    - アンサーチェッカーAPI制限除去
 src/app/ai/page.tsx                    - AIページのナビゲーション制限除去
 ```
 
@@ -85,6 +96,7 @@ src/app/goal-planner/page.tsx          - 完全にクライアントサイド化
 - **メイン:** https://nexus-academy-chi.vercel.app
 - **教材レコメンド:** https://nexus-academy-chi.vercel.app/material-recommend
 - **ゴールプランナー:** https://nexus-academy-chi.vercel.app/goal-planner
+- **アンサーチェッカー:** https://nexus-academy-chi.vercel.app/answer-checker
 
 ### 環境変数（設定済み）
 ```

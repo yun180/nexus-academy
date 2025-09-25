@@ -126,8 +126,7 @@ export default function AIPage() {
             <h3 className="text-lg font-semibold text-orange-900 mb-2">アンサーチェッカー</h3>
             <p className="text-orange-700 mb-6">手書き答案の自動採点</p>
             <button
-              onClick={() => handleFeatureClick('answer-checker')}
-              disabled={false}
+              onClick={() => window.location.href = '/answer-checker'}
               className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors"
             >
               開始する

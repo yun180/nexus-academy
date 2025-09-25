@@ -20,12 +20,6 @@ export async function POST(request: NextRequest) {
     }
 
     const user = userResult.rows[0];
-    if (user.plan !== 'plus') {
-      return NextResponse.json({ 
-        error: 'Answer Checker requires PLUS subscription',
-        feature: 'answer-checker'
-      }, { status: 403 });
-    }
 
     const formData = await request.formData();
     const imageFile = formData.get('image') as File;

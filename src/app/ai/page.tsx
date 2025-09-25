@@ -13,7 +13,7 @@ export default function AIPage() {
       try {
         const response = await fetch('/api/me');
         if (response.ok) {
-          const userData = await response.json();
+          await response.json();
         }
       } catch (error) {
         console.error('Failed to fetch user:', error);

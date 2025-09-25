@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
+import ImageUploadZone from '@/components/ImageUploadZone';
 
 interface CheckResult {
   checkId: string;
@@ -59,26 +60,6 @@ export default function AnswerCheckerPage() {
     fetchHistory();
   }, []);
 
-  const handleImageChange = (type: 'question' | 'expectedAnswer' | 'handwrittenAnswer') => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (type === 'question') {
-          setFormData(prev => ({ ...prev, questionImage: file }));
-          setQuestionImagePreview(result);
-        } else if (type === 'expectedAnswer') {
-          setFormData(prev => ({ ...prev, expectedAnswerImage: file }));
-          setExpectedAnswerImagePreview(result);
-        } else if (type === 'handwrittenAnswer') {
-          setFormData(prev => ({ ...prev, handwrittenAnswerImage: file }));
-          setHandwrittenAnswerImagePreview(result);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,9 +124,9 @@ export default function AnswerCheckerPage() {
       <div className="max-w-6xl mx-auto space-y-8">
         <h1 className="text-2xl font-bold text-gray-900">アンサーチェッカー</h1>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">答案アップロード</h2>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-6">答案アップロード</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -163,89 +144,64 @@ export default function AnswerCheckerPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  問題画像（任意）
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  onChange={handleImageChange('question')}
-                />
-                {questionImagePreview && (
-                  <div className="mt-4">
-                    <img
-                      src={questionImagePreview}
-                      alt="問題画像プレビュー"
-                      className="max-w-full h-48 object-contain border border-gray-200 rounded"
-                    />
-                  </div>
-                )}
-              </div>
+              <ImageUploadZone
+                label="問題画像（任意）"
+                onImageSelect={(file) => {
+                  setFormData(prev => ({ ...prev, questionImage: file }));
+                  const reader = new FileReader();
+                  reader.onload = (e) => setQuestionImagePreview(e.target?.result as string);
+                  reader.readAsDataURL(file);
+                }}
+                preview={questionImagePreview}
+                className="mb-6"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  模範解答画像
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  onChange={handleImageChange('expectedAnswer')}
-                  required
-                />
-                {expectedAnswerImagePreview && (
-                  <div className="mt-4">
-                    <img
-                      src={expectedAnswerImagePreview}
-                      alt="模範解答画像プレビュー"
-                      className="max-w-full h-48 object-contain border border-gray-200 rounded"
-                    />
-                  </div>
-                )}
-              </div>
+              <ImageUploadZone
+                label="模範解答画像"
+                required
+                onImageSelect={(file) => {
+                  setFormData(prev => ({ ...prev, expectedAnswerImage: file }));
+                  const reader = new FileReader();
+                  reader.onload = (e) => setExpectedAnswerImagePreview(e.target?.result as string);
+                  reader.readAsDataURL(file);
+                }}
+                preview={expectedAnswerImagePreview}
+                capture="environment"
+                className="mb-6"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  手書き答案画像
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  onChange={handleImageChange('handwrittenAnswer')}
-                  required
-                />
-                {handwrittenAnswerImagePreview && (
-                  <div className="mt-4">
-                    <img
-                      src={handwrittenAnswerImagePreview}
-                      alt="手書き答案画像プレビュー"
-                      className="max-w-full h-48 object-contain border border-gray-200 rounded"
-                    />
-                  </div>
-                )}
-              </div>
+              <ImageUploadZone
+                label="手書き答案画像"
+                required
+                onImageSelect={(file) => {
+                  setFormData(prev => ({ ...prev, handwrittenAnswerImage: file }));
+                  const reader = new FileReader();
+                  reader.onload = (e) => setHandwrittenAnswerImagePreview(e.target?.result as string);
+                  reader.readAsDataURL(file);
+                }}
+                preview={handwrittenAnswerImagePreview}
+                capture="environment"
+                className="mb-6"
+              />
 
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                 <button
                   type="submit"
                   disabled={checking}
-                  className={`flex-1 py-3 px-4 rounded-md font-medium ${
+                  className={`flex-1 py-4 px-6 rounded-md font-medium text-lg ${
                     checking
                       ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                      : 'bg-orange-600 text-white hover:bg-orange-700'
-                  }`}
+                      : 'bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800'
+                  } transition-colors touch-manipulation`}
                 >
-                  {checking ? '採点中...' : '採点開始'}
+                  {checking ? '📊 採点中...' : '🚀 採点開始'}
                 </button>
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  className="px-6 py-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors touch-manipulation"
                 >
-                  リセット
+                  🔄 リセット
                 </button>
               </div>
             </form>

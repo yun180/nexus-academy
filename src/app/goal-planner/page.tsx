@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import UpgradeModal from '@/components/UpgradeModal';
 
 interface Goal {
   id: string;
@@ -22,12 +21,10 @@ interface Goal {
       description: string;
     }>;
   };
+  created_at: string;
 }
 
 export default function GoalPlannerPage() {
-  const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [formData, setFormData] = useState({
     targetSchool: '',
@@ -41,35 +38,49 @@ export default function GoalPlannerPage() {
   const levels = ['基礎', '標準', '応用'];
 
   useEffect(() => {
-    const fetchData = async () => {
+    const saved = localStorage.getItem('nexus-goal-planner');
+    if (saved) {
       try {
-        const [userResponse, goalResponse] = await Promise.all([
-          fetch('/api/me'),
-          fetch('/api/goal-planner')
-        ]);
-
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          setUser(userData);
-          
-          if (userData.plan !== 'plus') {
-            setShowUpgradeModal(true);
-          }
-        }
-
-        if (goalResponse.ok) {
-          const goalData = await goalResponse.json();
-          setGoal(goalData.goal);
-        }
+        const parsedGoal = JSON.parse(saved);
+        setGoal(parsedGoal);
+        setFormData({
+          targetSchool: parsedGoal.target_school || '',
+          examDate: parsedGoal.exam_date || '',
+          currentLevel: parsedGoal.current_level || '基礎',
+          targetSubjects: parsedGoal.target_subjects || []
+        });
       } catch (error) {
-        console.error('Failed to fetch data:', error);
-      } finally {
-        setLoading(false);
+        console.error('Failed to load saved goal:', error);
       }
-    };
-
-    fetchData();
+    }
   }, []);
+
+  const generateStudyPlan = (targetSchool: string, examDate: string, currentLevel: string, targetSubjects: string[]) => {
+    const examDateTime = new Date(examDate).getTime();
+    const currentDateTime = new Date().getTime();
+    const diffTime = examDateTime - currentDateTime;
+    
+    const totalWeeks = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7)));
+    
+    return {
+      totalWeeks,
+      weeklySchedule: targetSubjects.map((subject: string) => ({
+        subject,
+        hoursPerWeek: currentLevel === '基礎' ? 8 : currentLevel === '標準' ? 10 : 12,
+        topics: [
+          `${subject}の基礎復習`,
+          `${subject}の応用問題`,
+          `${subject}の過去問演習`
+        ]
+      })),
+      milestones: [
+        { week: Math.ceil(totalWeeks * 0.25), description: '基礎固め完了' },
+        { week: Math.ceil(totalWeeks * 0.5), description: '応用力強化' },
+        { week: Math.ceil(totalWeeks * 0.75), description: '過去問対策' },
+        { week: totalWeeks, description: '最終調整・本番準備' }
+      ].filter(milestone => milestone.week <= totalWeeks)
+    };
+  };
 
   const handleSubjectToggle = (subject: string) => {
     setFormData(prev => ({
@@ -83,71 +94,42 @@ export default function GoalPlannerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (user?.plan !== 'plus') {
-      setShowUpgradeModal(true);
-      return;
-    }
-
     if (formData.targetSubjects.length === 0) {
       alert('少なくとも1つの科目を選択してください');
       return;
     }
 
     setGenerating(true);
-    try {
-      const response = await fetch('/api/goal-planner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setGoal(data.goal);
-      } else {
-        const error = await response.json();
-        alert(error.error || '学習計画の生成に失敗しました');
-      }
-    } catch (error) {
-      console.error('Goal creation error:', error);
-      alert('エラーが発生しました');
-    } finally {
+    
+    setTimeout(() => {
+      const newStudyPlan = generateStudyPlan(
+        formData.targetSchool,
+        formData.examDate,
+        formData.currentLevel,
+        formData.targetSubjects
+      );
+      
+      const goalData: Goal = {
+        id: `goal-${Date.now()}`,
+        target_school: formData.targetSchool,
+        exam_date: formData.examDate,
+        current_level: formData.currentLevel,
+        target_subjects: formData.targetSubjects,
+        study_plan: newStudyPlan,
+        created_at: new Date().toISOString()
+      };
+      
+      localStorage.setItem('nexus-goal-planner', JSON.stringify(goalData));
+      
+      setGoal(goalData);
       setGenerating(false);
-    }
+    }, 2000);
   };
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
         <h1 className="text-2xl font-bold text-gray-900">ゴールプランナー</h1>
-        
-        {user?.plan !== 'plus' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">PLUS限定機能</h3>
-                <p className="mt-1 text-sm text-yellow-700">
-                  ゴールプランナーはPLUS会員限定の機能です。アップグレードして学習計画を自動生成しましょう。
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -217,9 +199,9 @@ export default function GoalPlannerPage() {
 
               <button
                 type="submit"
-                disabled={generating || user?.plan !== 'plus'}
+                disabled={generating}
                 className={`w-full py-3 px-4 rounded-md font-medium ${
-                  generating || user?.plan !== 'plus'
+                  generating
                     ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700'
                 }`}
@@ -269,11 +251,6 @@ export default function GoalPlannerPage() {
         </div>
       </div>
 
-      <UpgradeModal 
-        isOpen={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)}
-        reason="feature_locked"
-      />
     </Layout>
   );
 }

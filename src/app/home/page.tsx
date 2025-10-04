@@ -85,10 +85,10 @@ export default function HomePage() {
             />
             <UsageCard
               title="教材レコメンド"
-              current={1}
-              max={3}
+              current={0}
+              max={0}
               color="orange"
-              unlimited={user?.plan === 'plus'}
+              unlimited={true}
             />
           </div>
         </div>
@@ -142,9 +142,9 @@ export default function HomePage() {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">教材レコメンド</h3>
             <p className="text-gray-600 mb-4">苦手分野に合わせた教材を推薦</p>
-            <p className="text-sm text-gray-500 mb-4">残り利用回数: {user?.plan === 'plus' ? '無制限' : '1回'}</p>
+            <p className="text-sm text-gray-500 mb-4">残り利用回数: 無制限</p>
             <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-              <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${user?.plan === 'plus' ? 100 : 33}%` }} />
+              <div className="bg-orange-500 h-2 rounded-full" style={{ width: '100%' }} />
             </div>
             <button 
               onClick={() => window.location.href = '/material-recommend'}

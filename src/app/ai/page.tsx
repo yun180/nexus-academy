@@ -5,7 +5,6 @@ import Layout from '@/components/Layout';
 import UpgradeModal from '@/components/UpgradeModal';
 
 export default function AIPage() {
-  const [user, setUser] = useState<{ plan: 'free' | 'plus' } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -14,8 +13,7 @@ export default function AIPage() {
       try {
         const response = await fetch('/api/me');
         if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
+          await response.json();
         }
       } catch (error) {
         console.error('Failed to fetch user:', error);
@@ -93,8 +91,7 @@ export default function AIPage() {
             <h3 className="text-lg font-semibold text-green-900 mb-2">ゴールプランナー</h3>
             <p className="text-green-700 mb-6">学習カレンダーを自動生成</p>
             <button
-              onClick={() => handleFeatureClick('goal-planner')}
-              disabled={false}
+              onClick={() => window.location.href = '/goal-planner'}
               className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-600 transition-colors"
             >
               開始する
@@ -110,8 +107,7 @@ export default function AIPage() {
             <h3 className="text-lg font-semibold text-purple-900 mb-2">チャレンジマッチ</h3>
             <p className="text-purple-700 mb-6">AI小テスト機能</p>
             <button
-              onClick={() => handleFeatureClick('challenge-match')}
-              disabled={false}
+              onClick={() => window.location.href = '/challenge'}
               className="w-full bg-purple-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-600 transition-colors"
             >
               開始する
@@ -127,8 +123,7 @@ export default function AIPage() {
             <h3 className="text-lg font-semibold text-orange-900 mb-2">アンサーチェッカー</h3>
             <p className="text-orange-700 mb-6">手書き答案の自動採点</p>
             <button
-              onClick={() => handleFeatureClick('answer-checker')}
-              disabled={false}
+              onClick={() => window.location.href = '/answer-checker'}
               className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors"
             >
               開始する

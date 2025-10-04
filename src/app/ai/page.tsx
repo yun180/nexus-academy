@@ -107,8 +107,7 @@ export default function AIPage() {
             <h3 className="text-lg font-semibold text-purple-900 mb-2">チャレンジマッチ</h3>
             <p className="text-purple-700 mb-6">AI小テスト機能</p>
             <button
-              onClick={() => handleFeatureClick('challenge-match')}
-              disabled={false}
+              onClick={() => window.location.href = '/challenge'}
               className="w-full bg-purple-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-600 transition-colors"
             >
               開始する
